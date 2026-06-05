@@ -286,10 +286,8 @@ impl Viewer2D {
             },
         )?;
 
-        let geometry_bufs = GeometryBuffers::allocate(
-            state,
-            window.window.inner_size().into(),
-        )?;
+        let geometry_bufs =
+            GeometryBuffers::allocate(state, window.size.into())?;
 
         let (msg_tx, msg_rx) = crossbeam::channel::unbounded();
 
@@ -839,7 +837,7 @@ impl AppWindow for Viewer2D {
         swapchain_view: &wgpu::TextureView,
         encoder: &mut wgpu::CommandEncoder,
     ) -> anyhow::Result<()> {
-        let size: [u32; 2] = window.window.inner_size().into();
+        let size: [u32; 2] = window.size.into();
 
         let mut transient_res: HashMap<String, InputResource<'_>> =
             HashMap::default();

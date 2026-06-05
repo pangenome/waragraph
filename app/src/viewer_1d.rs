@@ -1329,7 +1329,7 @@ impl AppWindow for Viewer1D {
             return Ok(());
         }
 
-        let size: [u32; 2] = window.window.inner_size().into();
+        let size: [u32; 2] = window.size.into();
 
         let mut transient_res: HashMap<String, InputResource<'_>> =
             HashMap::default();

@@ -279,7 +279,7 @@ impl AppWindow for PathRenderer {
         swapchain_view: &wgpu::TextureView,
         encoder: &mut wgpu::CommandEncoder,
     ) -> anyhow::Result<()> {
-        let size: [u32; 2] = window.window.inner_size().into();
+        let size: [u32; 2] = window.size.into();
 
         let mut transient_res: HashMap<String, InputResource<'_>> =
             HashMap::default();

@@ -1,0 +1,4 @@
+parsed_10928=yes
+samples=2799
+last_pixels_per_bp=1046
+max_pixels_per_bp=1046

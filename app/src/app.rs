@@ -285,7 +285,7 @@ impl App {
         let title = "Waragraph 1D";
 
         let app = AppWindowState::init(event_loop, state, title, |window| {
-            let dims: [u32; 2] = window.window.inner_size().into();
+            let dims: [u32; 2] = window.size.into();
 
             let mut app = Viewer1D::init(
                 dims,
@@ -407,24 +407,33 @@ impl App {
                             WindowEvent::CloseRequested => {
                                 *control_flow = ControlFlow::Exit
                             }
-                            WindowEvent::Resized(phys_size) => {
+                            WindowEvent::Resized(_phys_size) => {
                                 if is_ready {
+                                    let old_size = app.window.size;
                                     app.resize(&state);
                                     app.app
                                         .on_resize(
                                             &state,
+                                            old_size.into(),
                                             app.window.size.into(),
-                                            (*phys_size).into(),
                                         )
                                         .unwrap();
                                 }
                             }
                             WindowEvent::ScaleFactorChanged {
-                                new_inner_size,
+                                new_inner_size: _,
                                 ..
                             } => {
                                 if is_ready {
+                                    let old_size = app.window.size;
                                     app.resize(&state);
+                                    app.app
+                                        .on_resize(
+                                            &state,
+                                            old_size.into(),
+                                            app.window.size.into(),
+                                        )
+                                        .unwrap();
                                 }
                             }
                             _ => {}

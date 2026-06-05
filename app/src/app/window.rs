@@ -4,6 +4,7 @@ use std::sync::Arc;
 use raving_wgpu::{gui::EguiCtx, WindowState};
 use tokio::sync::RwLock;
 use winit::{
+    dpi::PhysicalSize,
     event::{ElementState, Event, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget},
     window::{WindowBuilder, WindowId},
@@ -38,10 +39,10 @@ impl AppWindowState {
         title: &str,
         constructor: impl FnOnce(&WindowState) -> anyhow::Result<Box<dyn AppWindow>>,
     ) -> anyhow::Result<Self> {
-        let window =
-            WindowBuilder::new().with_title(title).build(event_loop)?;
+        let window = app_window_builder(title).build(event_loop)?;
 
-        let win_state = state.prepare_window(window)?;
+        let mut win_state = state.prepare_window(window)?;
+        resize_window_surface(&mut win_state, &state.device);
 
         let egui_ctx =
             EguiCtx::init(&state, win_state.surface_format, &event_loop, None);
@@ -57,7 +58,7 @@ impl AppWindowState {
     }
 
     pub(super) fn resize(&mut self, state: &raving_wgpu::State) {
-        self.window.resize(&state.device);
+        resize_window_surface(&mut self.window, &state.device);
     }
 
     pub(super) fn on_event<'a>(&mut self, event: &WindowEvent<'a>) -> bool {
@@ -116,7 +117,7 @@ impl AppWindowState {
             state.queue.submit(Some(encoder.finish()));
             output.present();
         } else {
-            window.resize(&state.device);
+            resize_window_surface(window, &state.device);
         }
 
         Ok(())
@@ -135,11 +136,10 @@ impl AsleepWindow {
         event_loop: &EventLoopWindowTarget<()>,
         state: &raving_wgpu::State,
     ) -> anyhow::Result<AppWindowState> {
-        let window = WindowBuilder::new()
-            .with_title(&self.title)
-            .build(event_loop)?;
+        let window = app_window_builder(&self.title).build(event_loop)?;
 
-        let win_state = state.prepare_window(window)?;
+        let mut win_state = state.prepare_window(window)?;
+        resize_window_surface(&mut win_state, &state.device);
 
         Ok(AppWindowState {
             title: self.title,
@@ -147,6 +147,130 @@ impl AsleepWindow {
             app: self.app,
             egui: self.egui,
         })
+    }
+}
+
+fn app_window_builder(title: &str) -> WindowBuilder {
+    let builder = WindowBuilder::new().with_title(title);
+
+    if should_disable_wayland_csd(
+        std::env::var_os("WAYLAND_DISPLAY"),
+        std::env::var_os("WINIT_UNIX_BACKEND"),
+    ) {
+        builder.with_decorations(false)
+    } else {
+        builder
+    }
+}
+
+fn should_disable_wayland_csd(
+    wayland_display: Option<std::ffi::OsString>,
+    winit_unix_backend: Option<std::ffi::OsString>,
+) -> bool {
+    let has_wayland_display = wayland_display
+        .as_deref()
+        .map(|value| !value.is_empty())
+        .unwrap_or(false);
+    let forces_x11 = winit_unix_backend
+        .as_deref()
+        .and_then(|value| value.to_str())
+        .map(|value| value.eq_ignore_ascii_case("x11"))
+        .unwrap_or(false);
+
+    has_wayland_display && !forces_x11
+}
+
+pub(super) fn resize_window_surface(
+    window_state: &mut WindowState,
+    device: &wgpu::Device,
+) {
+    let inner_size = window_state.window.inner_size();
+    let scale_factor = window_state.window.scale_factor();
+    let surface_size = round_surface_size_for_scale(inner_size, scale_factor);
+
+    if surface_size.width > 0 && surface_size.height > 0 {
+        window_state.size = surface_size;
+        window_state.config.width = surface_size.width;
+        window_state.config.height = surface_size.height;
+        window_state.surface.configure(device, &window_state.config);
+    }
+}
+
+pub(super) fn round_surface_size_for_scale(
+    size: PhysicalSize<u32>,
+    scale_factor: f64,
+) -> PhysicalSize<u32> {
+    let divisor = surface_scale_divisor(scale_factor);
+
+    PhysicalSize::new(
+        round_up_to_multiple(size.width, divisor),
+        round_up_to_multiple(size.height, divisor),
+    )
+}
+
+fn surface_scale_divisor(scale_factor: f64) -> u32 {
+    if !scale_factor.is_finite() || scale_factor <= 1.0 {
+        return 1;
+    }
+
+    scale_factor.ceil().max(1.0) as u32
+}
+
+fn round_up_to_multiple(value: u32, multiple: u32) -> u32 {
+    if value == 0 || multiple <= 1 {
+        return value;
+    }
+
+    let remainder = value % multiple;
+    if remainder == 0 {
+        value
+    } else {
+        value.saturating_add(multiple - remainder)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rounds_odd_wayland_hidpi_height_to_scale_multiple() {
+        let size = PhysicalSize::new(820, 45);
+
+        let rounded = round_surface_size_for_scale(size, 2.0);
+
+        assert_eq!(rounded, PhysicalSize::new(820, 46));
+    }
+
+    #[test]
+    fn leaves_scale_one_and_zero_dimensions_unchanged() {
+        assert_eq!(
+            round_surface_size_for_scale(PhysicalSize::new(819, 45), 1.0),
+            PhysicalSize::new(819, 45)
+        );
+        assert_eq!(
+            round_surface_size_for_scale(PhysicalSize::new(0, 45), 2.0),
+            PhysicalSize::new(0, 46)
+        );
+    }
+
+    #[test]
+    fn rounds_fractional_hidpi_to_next_integer_scale_multiple() {
+        let size = PhysicalSize::new(100, 101);
+
+        let rounded = round_surface_size_for_scale(size, 1.25);
+
+        assert_eq!(rounded, PhysicalSize::new(100, 102));
+    }
+
+    #[test]
+    fn disables_wayland_csd_unless_x11_backend_is_forced() {
+        assert!(should_disable_wayland_csd(Some("wayland-0".into()), None));
+        assert!(!should_disable_wayland_csd(
+            Some("wayland-0".into()),
+            Some("x11".into())
+        ));
+        assert!(!should_disable_wayland_csd(None, None));
     }
 }
 
