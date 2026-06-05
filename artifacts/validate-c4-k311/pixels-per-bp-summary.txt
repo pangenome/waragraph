@@ -1,0 +1,11 @@
+source_log=artifacts/validate-c4-k311/waragraph-ui.log
+input=/home/erik/waragraph/c4.k311.poa2kb.gfa.zst
+viewer=target/debug/waragraph
+window_title=Waragraph 1D
+first_pixels_per_bp=0.001772007056243345
+last_pixels_per_bp=1843
+max_pixels_per_bp=1843
+samples=2755
+base_text_threshold=4.0
+compressed_load_observed=parsed 10928 edges
+final_scale_result=base-pair text rendering threshold exceeded
