@@ -1,6 +1,5 @@
 use bimap::BiBTreeMap;
 use roaring::{RoaringBitmap, RoaringTreemap};
-use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs::File;
@@ -313,6 +312,7 @@ impl PathIndex {
         let mut sequence = Vec::new();
 
         let mut seg_id_range = (std::u32::MAX, 0u32);
+        let mut segment_id_to_node = HashMap::new();
 
         loop {
             line_buf.clear();
@@ -346,6 +346,17 @@ impl PathIndex {
             seg_id_range.1 = seg_id_range.1.max(seg_id);
 
             let len = seq.len();
+            let node_id = seg_lens.len() as u32;
+
+            if segment_id_to_node.insert(seg_id, node_id).is_some() {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!(
+                        "GFA input `{}` contains duplicate segment ID {seg_id}",
+                        gfa_path.display()
+                    ),
+                ));
+            }
 
             segment_offsets.push(sequence_total_len as u64);
             sequence_total_len += len;
@@ -362,15 +373,6 @@ impl PathIndex {
                 ),
             ));
         }
-
-        assert!(
-            seg_id_range.1 - seg_id_range.0 == (seg_lens.len() as u32) - 1,
-            "GFA segments must be tightly packed: min ID {}, max ID {}, node count {}, was {}",
-            seg_id_range.0,
-            seg_id_range.1,
-            seg_lens.len(),
-            seg_id_range.1 - seg_id_range.0,
-        );
 
         let mut gfa_reader = open_gfa_reader(gfa_path)?;
 
@@ -391,7 +393,7 @@ impl PathIndex {
             }
 
             let fields = line.split(|&c| c == b'\t');
-            let edge = Self::parse_gfa_link(seg_id_range.0, fields)?;
+            let edge = Self::parse_gfa_link(&segment_id_to_node, fields)?;
             edges.push(edge);
         }
         println!("parsed {} edges", edges.len());
@@ -455,7 +457,12 @@ impl PathIndex {
                 let seg_id = btoi::btou::<u32>(seg).map_err(|e| {
                     std::io::Error::new(std::io::ErrorKind::InvalidData, e)
                 })?;
-                let seg_ix = seg_id - seg_id_range.0;
+                let seg_ix = *segment_id_to_node.get(&seg_id).ok_or_else(|| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        format!("GFA path references unknown segment ID {seg_id}"),
+                    )
+                })?;
                 let len = seg_lens[seg_ix as usize];
 
                 let is_rev = orient == b"-";
@@ -729,7 +736,7 @@ impl PathIndex {
 
 impl PathIndex {
     fn parse_gfa_link<'a>(
-        min_id: u32,
+        segment_id_to_node: &HashMap<u32, u32>,
         mut fields: impl Iterator<Item = &'a [u8]>,
     ) -> std::io::Result<Edge> {
         let fields_missing =
@@ -740,12 +747,10 @@ impl PathIndex {
                 std::io::Error::new(std::io::ErrorKind::InvalidData, e)
             })?;
 
-            id.checked_sub(min_id).ok_or_else(|| {
+            segment_id_to_node.get(&id).copied().ok_or_else(|| {
                 std::io::Error::new(
                     std::io::ErrorKind::InvalidData,
-                    format!(
-                        "GFA link references segment ID {id} below minimum segment ID {min_id}"
-                    ),
+                    format!("GFA link references unknown segment ID {id}"),
                 )
             })
         };
@@ -794,6 +799,13 @@ mod tests {
 
     const TINY_GFA: &[u8] =
         b"S\t1\tACG\nS\t2\tT\nL\t1\t+\t2\t-\t0M\nP\tsample\t1+,2-\t*\n";
+    const SPARSE_GFA: &[u8] = b"\
+S\t1\tACG
+S\t10\tTT
+S\t42\tG
+L\t1\t+\t42\t-\t0M
+P\tsparse\t1+,42-,10+\t*
+";
 
     fn temp_path(name: &str) -> PathBuf {
         let nanos = SystemTime::now()
@@ -810,6 +822,56 @@ mod tests {
             index.edges_iter().count(),
             index.path_names.len(),
         )
+    }
+
+    fn assert_sparse_gfa_index(index: &PathIndex) {
+        assert_eq!(index.node_count, 3);
+        assert_eq!(index.edges_iter().count(), 1);
+        assert_eq!(index.path_names.len(), 1);
+        assert_eq!(index.sequence_total_len, Bp(6));
+        assert_eq!(index.sequence, b"ACGTTG");
+        assert_eq!(index.segment_id_range, (1, 42));
+
+        assert_eq!(index.node_sequence(Node(0)), b"ACG");
+        assert_eq!(index.node_sequence(Node(1)), b"TT");
+        assert_eq!(index.node_sequence(Node(2)), b"G");
+
+        let path_id = PathId::from(0usize);
+        assert_eq!(
+            index.path_steps[path_id.ix()],
+            vec![
+                OrientedNode::new(0, false),
+                OrientedNode::new(2, true),
+                OrientedNode::new(1, false),
+            ]
+        );
+        assert_eq!(
+            index
+                .path_step_offsets
+                .get(path_id.ix())
+                .unwrap()
+                .iter()
+                .collect::<Vec<_>>(),
+            vec![0, 3, 4]
+        );
+        assert_eq!(
+            index.path_node_sets[path_id.ix()]
+                .iter()
+                .collect::<Vec<_>>(),
+            vec![0, 1, 2]
+        );
+
+        let edge = *index.edges_iter().next().unwrap();
+        assert_eq!(
+            edge,
+            Edge::new(OrientedNode::new(0, false), OrientedNode::new(2, true))
+        );
+
+        let node_two_steps = index
+            .node_path_steps(Node(2), path_id)
+            .unwrap()
+            .collect::<Vec<_>>();
+        assert_eq!(node_two_steps, vec![1]);
     }
 
     #[test]
@@ -841,7 +903,7 @@ mod tests {
         let pos_range = 44..55;
         let range0 = index.pos_range_nodes(pos_range);
 
-        let mut last_start = (total_len.0 - 12);
+        let mut last_start = total_len.0 - 12;
         last_start -= 1;
 
         let pos_range = last_start..total_len.0;
@@ -849,6 +911,29 @@ mod tests {
 
         assert_eq!(range0, Node(1)..=Node(1));
         assert_eq!(range1, Node(4964)..=Node(4965));
+    }
+
+    #[test]
+    fn sparse_numeric_segment_ids_use_compact_node_indices() {
+        let plain_path = temp_path("sparse.gfa");
+        std::fs::write(&plain_path, SPARSE_GFA).unwrap();
+
+        let index = PathIndex::from_gfa(&plain_path).unwrap();
+        assert_sparse_gfa_index(&index);
+
+        let _ = std::fs::remove_file(plain_path);
+    }
+
+    #[test]
+    fn sparse_numeric_segment_ids_load_from_zstd_gfa() {
+        let zstd_path = temp_path("sparse.gfa.zst");
+        let compressed = zstd::stream::encode_all(SPARSE_GFA, 0).unwrap();
+        std::fs::write(&zstd_path, compressed).unwrap();
+
+        let index = PathIndex::from_gfa(&zstd_path).unwrap();
+        assert_sparse_gfa_index(&index);
+
+        let _ = std::fs::remove_file(zstd_path);
     }
 
     #[test]
