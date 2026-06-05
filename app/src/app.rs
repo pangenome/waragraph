@@ -56,6 +56,8 @@ pub struct SharedState {
     // tsv_path: Option<Arc<RwLock<PathBuf>>>,
     pub data_color_schemes: Arc<RwLock<HashMap<String, ColorSchemeId>>>,
 
+    pub initial_1d_view_mode: String,
+
     pub app_msg_send: tokio::sync::mpsc::Sender<AppMsg>,
 }
 
@@ -221,6 +223,8 @@ impl App {
                 data_color_schemes: Arc::new(data_color_schemes.into()),
 
                 workspace,
+
+                initial_1d_view_mode: args.initial_1d_view_mode,
 
                 app_msg_send,
             }
@@ -589,6 +593,7 @@ pub struct Args {
 
     pub annotations: Vec<PathBuf>,
     pub gff_attr: Option<String>,
+    pub initial_1d_view_mode: String,
     // pub annotations: Option<PathBuf>,
 }
 
@@ -610,6 +615,9 @@ pub fn parse_args() -> std::result::Result<Args, pico_args::Error> {
     }
 
     let gff_attr = pargs.opt_value_from_str("--gff-attr")?;
+    let initial_1d_view_mode = pargs
+        .opt_value_from_fn("--view-mode", parse_1d_view_mode)?
+        .unwrap_or_else(|| "depth".to_string());
 
     let args = Args {
         gfa: pargs.free_from_os_str(parse_path)?,
@@ -617,6 +625,7 @@ pub fn parse_args() -> std::result::Result<Args, pico_args::Error> {
 
         annotations,
         gff_attr,
+        initial_1d_view_mode,
         // init_range,
     };
 
@@ -625,6 +634,29 @@ pub fn parse_args() -> std::result::Result<Args, pico_args::Error> {
 
 fn parse_path(s: &std::ffi::OsStr) -> Result<std::path::PathBuf, &'static str> {
     Ok(s.into())
+}
+
+fn parse_1d_view_mode(s: &str) -> Result<String, &'static str> {
+    match s {
+        "depth" | "path-name" | "path_name" | "strand" => {
+            Ok(s.replace('-', "_"))
+        }
+        _ => Err("view mode must be one of: depth, path-name, strand"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_1d_view_mode;
+
+    #[test]
+    fn parse_1d_view_mode_defaults_and_aliases() {
+        assert_eq!(parse_1d_view_mode("depth").unwrap(), "depth");
+        assert_eq!(parse_1d_view_mode("path-name").unwrap(), "path_name");
+        assert_eq!(parse_1d_view_mode("path_name").unwrap(), "path_name");
+        assert_eq!(parse_1d_view_mode("strand").unwrap(), "strand");
+        assert!(parse_1d_view_mode("unknown").is_err());
+    }
 }
 
 #[derive(Debug, Clone)]

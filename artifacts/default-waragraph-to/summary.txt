@@ -1,0 +1,13 @@
+default-depth_mode=depth
+default-depth_parsed_10928=true
+default-depth_first_pixels_per_bp=0.001772007056243345
+default-depth_last_pixels_per_bp=446.0
+default-depth_max_pixels_per_bp=446.0
+default-depth_screenshot_exists=True
+path-name_mode=path_name
+path-name_parsed_10928=true
+path-name_first_pixels_per_bp=0.001772007056243345
+path-name_last_pixels_per_bp=0.001772007056243345
+path-name_max_pixels_per_bp=0.001772007056243345
+path-name_screenshot_exists=True
+default-depth-zoomed_screenshot_exists=True

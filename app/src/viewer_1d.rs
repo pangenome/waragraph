@@ -193,7 +193,8 @@ impl Viewer1D {
         let path_list_view =
             ListView::new(paths.clone().map(PathId::from), Some(256));
 
-        let active_viz_data_key = "path_name".to_string();
+        let active_viz_data_key = shared.initial_1d_view_mode.clone();
+        log::warn!("Viewer1D initial visualization mode: {active_viz_data_key}");
 
         graph.set_node_preprocess_fn(draw_node, move |_ctx, op_state| {
             op_state.vertices = Some(0..6);

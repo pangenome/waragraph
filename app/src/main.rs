@@ -12,7 +12,7 @@ pub fn main() -> Result<()> {
 
     if args.is_err() {
         let name = std::env::args().next().unwrap();
-        println!("Usage: {name} <gfa> [tsv]");
+        println!("Usage: {name} [--view-mode depth|path-name|strand] <gfa> [tsv]");
         println!("4-column BED file can be provided using the --bed flag");
         std::process::exit(0);
     }

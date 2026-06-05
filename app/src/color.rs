@@ -128,7 +128,7 @@ impl ColorStore {
             rgba(50, 136, 189),
             rgba(94, 79, 162),
         ];
-        let mut spectral = vec![rgba(128, 128, 128), rgba(196, 196, 196)];
+        let mut spectral = vec![rgba(196, 196, 196), rgba(128, 128, 128)];
 
         spectral.extend(spectral_colors);
 

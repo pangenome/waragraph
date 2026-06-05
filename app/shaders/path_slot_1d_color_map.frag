@@ -34,6 +34,8 @@ layout (set = 1, binding = 4) readonly buffer Transform {
 // TODO: pass in a uniform
 vec4 BG_COLOR = vec4(1);
 // vec4 BG_COLOR = vec4(vec3(0), 1);
+const vec4 ROW_SEPARATOR_COLOR = vec4(0.86, 0.86, 0.86, 1.0);
+const float ROW_SEPARATOR_UV_HEIGHT = 0.035;
 
 void main() {
   uint row_offset = i_slot_id * u_data.row_size;
@@ -57,6 +59,10 @@ void main() {
 
   vec4 sampled = texture(sampler1D(u_colors, u_sampler), c_n);
   vec4 color = isinf(v) ? vec4(1.0) : sampled;
+
+  if (i_uv.y <= ROW_SEPARATOR_UV_HEIGHT) {
+    color = ROW_SEPARATOR_COLOR;
+  }
 
   f_color = color;
 
