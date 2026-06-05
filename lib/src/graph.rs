@@ -2,8 +2,11 @@ use bimap::BiBTreeMap;
 use roaring::{RoaringBitmap, RoaringTreemap};
 use std::collections::BTreeMap;
 use std::collections::HashMap;
+use std::ffi::OsStr;
+use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
+use std::path::Path;
 
 use self::iter::PangenomeNodePosRangeIter;
 use self::iter::PangenomeNodeRangeIter;
@@ -15,6 +18,58 @@ pub mod sampling;
 pub mod spoke;
 
 pub mod matrix;
+
+fn open_gfa_reader(
+    gfa_path: &Path,
+) -> std::io::Result<BufReader<Box<dyn Read>>> {
+    let file = File::open(gfa_path).map_err(|e| {
+        std::io::Error::new(
+            e.kind(),
+            format!("failed to open GFA input `{}`: {e}", gfa_path.display()),
+        )
+    })?;
+
+    let reader: Box<dyn Read> = if gfa_path.extension()
+        == Some(OsStr::new("zst"))
+    {
+        let decoder = zstd::stream::read::Decoder::new(file).map_err(|e| {
+            std::io::Error::new(
+                e.kind(),
+                format!(
+                    "failed to initialize zstd decoder for GFA input `{}`: {e}",
+                    gfa_path.display()
+                ),
+            )
+        })?;
+        Box::new(decoder)
+    } else {
+        Box::new(file)
+    };
+
+    Ok(BufReader::new(reader))
+}
+
+fn read_gfa_line(
+    gfa_reader: &mut impl BufRead,
+    line_buf: &mut Vec<u8>,
+    gfa_path: &Path,
+) -> std::io::Result<usize> {
+    gfa_reader.read_until(b'\n', line_buf).map_err(|e| {
+        let compression = if gfa_path.extension() == Some(OsStr::new("zst")) {
+            " zstd-compressed"
+        } else {
+            ""
+        };
+
+        std::io::Error::new(
+            e.kind(),
+            format!(
+                "failed to read{compression} GFA input `{}`: {e}",
+                gfa_path.display()
+            ),
+        )
+    })
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
@@ -247,8 +302,8 @@ impl PathIndex {
     pub fn from_gfa(
         gfa_path: impl AsRef<std::path::Path>,
     ) -> std::io::Result<Self> {
-        let gfa = std::fs::File::open(&gfa_path)?;
-        let mut gfa_reader = BufReader::new(gfa);
+        let gfa_path = gfa_path.as_ref();
+        let mut gfa_reader = open_gfa_reader(gfa_path)?;
 
         let mut line_buf = Vec::new();
 
@@ -262,7 +317,7 @@ impl PathIndex {
         loop {
             line_buf.clear();
 
-            let len = gfa_reader.read_until(0xA, &mut line_buf)?;
+            let len = read_gfa_line(&mut gfa_reader, &mut line_buf, gfa_path)?;
             if len == 0 {
                 break;
             }
@@ -298,22 +353,33 @@ impl PathIndex {
             sequence.extend(seq);
         }
 
+        if seg_lens.is_empty() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!(
+                    "GFA input `{}` contains no segments",
+                    gfa_path.display()
+                ),
+            ));
+        }
+
         assert!(
-        seg_id_range.1 - seg_id_range.0 == (seg_lens.len() as u32) - 1,
-        "GFA segments must be tightly packed: min ID {}, max ID {}, node count {}, was {}",
-        seg_id_range.0, seg_id_range.1, seg_lens.len(),
-        seg_id_range.1 - seg_id_range.0,
+            seg_id_range.1 - seg_id_range.0 == (seg_lens.len() as u32) - 1,
+            "GFA segments must be tightly packed: min ID {}, max ID {}, node count {}, was {}",
+            seg_id_range.0,
+            seg_id_range.1,
+            seg_lens.len(),
+            seg_id_range.1 - seg_id_range.0,
         );
 
-        let gfa = std::fs::File::open(&gfa_path)?;
-        let mut gfa_reader = BufReader::new(gfa);
+        let mut gfa_reader = open_gfa_reader(gfa_path)?;
 
         let mut edges = Vec::new();
 
         loop {
             line_buf.clear();
 
-            let len = gfa_reader.read_until(0xA, &mut line_buf)?;
+            let len = read_gfa_line(&mut gfa_reader, &mut line_buf, gfa_path)?;
             if len == 0 {
                 break;
             }
@@ -334,8 +400,7 @@ impl PathIndex {
 
         let node_count = seg_lens.len();
 
-        let gfa = std::fs::File::open(&gfa_path)?;
-        let mut gfa_reader = BufReader::new(gfa);
+        let mut gfa_reader = open_gfa_reader(gfa_path)?;
 
         let mut path_names = BiBTreeMap::default();
 
@@ -350,7 +415,7 @@ impl PathIndex {
         loop {
             line_buf.clear();
 
-            let len = gfa_reader.read_until(b'\n', &mut line_buf)?;
+            let len = read_gfa_line(&mut gfa_reader, &mut line_buf, gfa_path)?;
             if len == 0 {
                 break;
             }
@@ -671,8 +736,17 @@ impl PathIndex {
             || std::io::Error::new(std::io::ErrorKind::Other, "Fields missing");
 
         let parse_id = |bs: &[u8]| {
-            btoi::btou::<u32>(bs).map(|i| i - min_id).map_err(|e| {
+            let id = btoi::btou::<u32>(bs).map_err(|e| {
                 std::io::Error::new(std::io::ErrorKind::InvalidData, e)
+            })?;
+
+            id.checked_sub(min_id).ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!(
+                        "GFA link references segment ID {id} below minimum segment ID {min_id}"
+                    ),
+                )
             })
         };
 
@@ -709,12 +783,34 @@ impl PathIndex {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     pub(crate) const GFA_PATH: &'static str = concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../test/data/",
         "A-3105.fa.353ea42.34ee7b1.1576367.smooth.fix.gfa"
     );
+
+    const TINY_GFA: &[u8] =
+        b"S\t1\tACG\nS\t2\tT\nL\t1\t+\t2\t-\t0M\nP\tsample\t1+,2-\t*\n";
+
+    fn temp_path(name: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir()
+            .join(format!("waragraph-{}-{nanos}-{name}", std::process::id(),))
+    }
+
+    fn graph_summary(index: &PathIndex) -> (usize, usize, usize) {
+        (
+            index.node_count,
+            index.edges_iter().count(),
+            index.path_names.len(),
+        )
+    }
 
     #[test]
     fn node_lengths() {
@@ -753,5 +849,42 @@ mod tests {
 
         assert_eq!(range0, Node(1)..=Node(1));
         assert_eq!(range1, Node(4964)..=Node(4965));
+    }
+
+    #[test]
+    fn zstd_gfa_matches_plain_gfa_summary() {
+        let plain_path = temp_path("tiny.gfa");
+        let zstd_path = temp_path("tiny.gfa.zst");
+
+        std::fs::write(&plain_path, TINY_GFA).unwrap();
+        let compressed = zstd::stream::encode_all(TINY_GFA, 0).unwrap();
+        std::fs::write(&zstd_path, compressed).unwrap();
+
+        let plain = PathIndex::from_gfa(&plain_path).unwrap();
+        let zstd = PathIndex::from_gfa(&zstd_path).unwrap();
+
+        assert_eq!(graph_summary(&plain), (2, 1, 1));
+        assert_eq!(graph_summary(&plain), graph_summary(&zstd));
+        assert_eq!(plain.sequence, zstd.sequence);
+        assert_eq!(plain.path_steps, zstd.path_steps);
+
+        let _ = std::fs::remove_file(plain_path);
+        let _ = std::fs::remove_file(zstd_path);
+    }
+
+    #[test]
+    fn corrupt_zstd_gfa_returns_error() {
+        let zstd_path = temp_path("corrupt.gfa.zst");
+        std::fs::write(&zstd_path, b"not a zstd stream").unwrap();
+
+        let error = PathIndex::from_gfa(&zstd_path).unwrap_err();
+        let message = error.to_string();
+
+        assert!(
+            message.contains("zstd") || message.contains("decoder"),
+            "unexpected error message: {message}"
+        );
+
+        let _ = std::fs::remove_file(zstd_path);
     }
 }
