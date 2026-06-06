@@ -1,0 +1,9 @@
+graph=/home/erik/waragraph/c4.k311.poa2kb.gfa.zst
+parsed_10928_edges=True
+before_screenshot_exists=True
+zoomed_screenshot_exists=True
+after_cycles_screenshot_exists=True
+pixels_per_bp_first=0.001772007056243345
+pixels_per_bp_last=446.0
+pixels_per_bp_max=446.0
+pixels_per_bp_samples=1251

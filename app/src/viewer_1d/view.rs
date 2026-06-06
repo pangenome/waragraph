@@ -1,7 +1,9 @@
 use waragraph_core::graph::Bp;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct View1D {
+    left: f64,
+    right: f64,
     range: std::ops::Range<u64>,
     max: u64,
 }
@@ -9,7 +11,12 @@ pub struct View1D {
 impl View1D {
     pub fn new(max: u64) -> Self {
         let range = 0..max;
-        Self { range, max }
+        Self {
+            left: 0.0,
+            right: max as f64,
+            range,
+            max,
+        }
     }
 
     pub fn range(&self) -> &std::ops::Range<u64> {
@@ -24,79 +31,89 @@ impl View1D {
         self.range.end - self.range.start
     }
 
+    pub fn offset_f64(&self) -> f64 {
+        self.left
+    }
+
+    pub fn len_f64(&self) -> f64 {
+        self.right - self.left
+    }
+
+    pub fn center_f64(&self) -> f64 {
+        self.left + self.len_f64() / 2.0
+    }
+
+    pub fn bp_at_norm_f64(&self, t: f64) -> f64 {
+        self.left + t.clamp(0.0, 1.0) * self.len_f64()
+    }
+
     pub fn max(&self) -> u64 {
         self.max
     }
 
     pub fn reset(&mut self) {
-        self.range = 0..self.max;
+        self.left = 0.0;
+        self.right = self.max as f64;
+        self.sync_integer_range();
     }
 
     fn make_valid(&mut self) {
-        let len = self.len();
+        let max = self.max as f64;
+        let max_len = max.max(1.0);
+        let mut len = self.len_f64().clamp(1.0, max_len);
 
-        if self.range.end > self.max() {
-            self.range.end = self.max();
+        if !len.is_finite() {
+            len = max_len;
         }
 
-        let max_offset = self.max.checked_sub(len).unwrap_or_default();
-        if self.offset() > max_offset {
-            self.range.start = max_offset;
+        if !self.left.is_finite() {
+            self.left = 0.0;
         }
+
+        self.left = self.left.clamp(0.0, (max - len).max(0.0));
+        self.right = self.left + len;
+
+        self.sync_integer_range();
+    }
+
+    fn sync_integer_range(&mut self) {
+        let max = self.max();
+        let start = self.left.floor().clamp(0.0, max as f64) as u64;
+        let mut end = self.right.ceil().clamp(0.0, max as f64) as u64;
+
+        if end <= start && max > 0 {
+            end = (start + 1).min(max);
+        }
+
+        self.range = start..end;
     }
 
     pub fn set(&mut self, left: u64, right: u64) {
-        self.range = left..right;
+        self.left = left as f64;
+        self.right = right as f64;
         self.make_valid();
     }
 
     pub fn translate(&mut self, delta: i64) {
-        let d = delta.abs() as u64;
-        let len = self.len();
-        if delta > 0 {
-            self.range.end += d;
-            self.range.start += d;
-        } else if delta < 0 {
-            self.range.start =
-                self.range.start.checked_sub(d).unwrap_or_default();
-            self.range.end = self.range.start + len;
-        }
+        self.translate_f64(delta as f64);
+    }
 
+    pub fn translate_f64(&mut self, delta: f64) {
+        self.left += delta;
+        self.right += delta;
         self.make_valid();
     }
 
     /// `delta` is in "view width" units, so +1 means panning the view
     /// to the right by `self.len()` units.
     pub fn translate_norm_f32(&mut self, fdelta: f32) {
-        let delta = (fdelta * self.len() as f32) as i64;
-        self.translate(delta);
+        self.translate_f64(fdelta as f64 * self.len_f64());
     }
 
     /// `fix` is a normalized point in the view [0..1] that will not
     /// move during the zoom
     pub fn zoom_around_norm_f32(&mut self, fix: f32, zdelta: f32) {
-        println!("zdelta: {zdelta}");
-        let old_len = self.len() as f32;
-        let new_len = old_len * zdelta;
-        let extra = new_len - old_len;
-
-        let mut l = self.range.start as f32;
-        let mut r = self.range.end as f32;
-
-        let left_prop = fix;
-        let right_prop = 1.0 - fix;
-
-        let max = self.max() as f32;
-
-        l -= (left_prop * extra).clamp(0.0, max);
-        r += (right_prop * extra).clamp(l, max);
-
-        let l = l as u64;
-        let r = r as u64;
-        self.range = l..r;
-        println!("new range: {l}..{r}");
-
-        self.make_valid();
+        self.zoom_with_focus(fix, zdelta);
     }
 
     /// Expands/contracts the view by a factor of `s`, keeping the point
@@ -105,36 +122,28 @@ impl View1D {
     /// `t` should be in `[0, 1]`, if `s` > 1.0, the view is zoomed out,
     /// if `s` < 1.0, it is zoomed in.
     pub fn zoom_with_focus(&mut self, t: f32, s: f32) {
-        let l0 = self.range.start as f32;
-        let r0 = self.range.end as f32;
+        self.zoom_with_focus_f64(t as f64, s as f64);
+    }
 
-        let v = r0 - l0;
-
-        let x = l0 + t * v;
-
-        let p_l = t;
-        let p_r = 1.0 - t;
-
-        let mut v_ = v * s;
-
-        // just so things don't implode
-        if v_ < 1.0 {
-            v_ = 1.0;
+    pub fn zoom_with_focus_f64(&mut self, t: f64, s: f64) {
+        if !s.is_finite() || s <= 0.0 {
+            return;
         }
 
-        let x_l = p_l * v_;
-        let x_r = p_r * v_;
+        let t = t.clamp(0.0, 1.0);
+        let old_len = self.len_f64();
+        let focus = self.bp_at_norm_f64(t);
 
-        let l1 = x - x_l;
-        let r1 = x + x_r;
+        let max_len = (self.max as f64).max(1.0);
+        let new_len = (old_len * s).clamp(1.0, max_len);
 
-        let max = self.max as f32;
+        let mut left = focus - t * new_len;
+        let max_left = (self.max as f64 - new_len).max(0.0);
+        left = left.clamp(0.0, max_left);
 
-        let l = l1.min(r1).clamp(0.0, max);
-        let r = r1.max(l1).clamp(0.0, max);
-
-        let range = (l.round() as u64)..(r.round() as u64);
-        self.range = range;
+        self.left = left;
+        self.right = left + new_len;
+        self.sync_integer_range();
     }
 }
 
@@ -195,7 +204,7 @@ impl View1D {
 
         let mid = on.start.0 + range_len / 2;
 
-        let cur_mid = self.offset() + self.len() / 2;
+        let cur_mid = self.center_f64();
 
         if range_len > self.len() {
             // if `on` is bigger than the current view, make the new view
@@ -205,8 +214,59 @@ impl View1D {
             self.zoom_around_norm_f32(0.5, 1.5);
         } else {
             // otherwise, do not resize the view, just translate it (if possible)
-            let delta = mid as i64 - cur_mid as i64;
-            self.translate(delta);
+            let delta = mid as f64 - cur_mid;
+            self.translate_f64(delta);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::View1D;
+
+    #[test]
+    fn zoom_with_focus_keeps_off_center_graph_coordinate_anchored() {
+        let mut view = View1D::new(10_000);
+        view.set(1_000, 5_000);
+
+        let pointer_t = 0.27;
+        let before = view.bp_at_norm_f64(pointer_t);
+
+        view.zoom_with_focus_f64(pointer_t, 0.62);
+
+        let after = view.bp_at_norm_f64(pointer_t);
+        assert!(
+            (before - after).abs() < 1e-6,
+            "expected focus {before} to remain anchored, got {after}"
+        );
+    }
+
+    #[test]
+    fn repeated_zoom_in_out_at_same_pointer_does_not_drift_center() {
+        let mut view = View1D::new(1_000_000);
+        view.set(123_456, 654_321);
+
+        let pointer_t = 0.73;
+        let initial_center = view.center_f64();
+        let initial_focus = view.bp_at_norm_f64(pointer_t);
+        let zoom = 0.875;
+
+        for _ in 0..200 {
+            view.zoom_with_focus_f64(pointer_t, zoom);
+            view.zoom_with_focus_f64(pointer_t, 1.0 / zoom);
+        }
+
+        let center_drift = (view.center_f64() - initial_center).abs();
+        let focus_drift =
+            (view.bp_at_norm_f64(pointer_t) - initial_focus).abs();
+
+        assert!(
+            center_drift < 1e-5,
+            "center drifted by {center_drift} after repeated zoom cycles"
+        );
+        assert!(
+            focus_drift < 1e-5,
+            "focus drifted by {focus_drift} after repeated zoom cycles"
+        );
     }
 }

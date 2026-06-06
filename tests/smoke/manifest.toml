@@ -1,0 +1,16 @@
+# Smoke gate manifest
+#
+# `wg done <task>` runs every scenario whose `owners` list contains the task id.
+# Exit 0 = PASS. Exit 77 = SKIP. Any other non-zero exit code = FAIL.
+#
+# The manifest is grow-only: add scenarios for regressions that should be
+# caught permanently.
+
+[[scenario]]
+name = "waragraph_zoom_anchor_transform"
+script = "scenarios/waragraph_zoom_anchor_transform.sh"
+owners = [
+    "make-waragraph-zoom",
+]
+description = "Pins the 1D viewer viewport math for pointer-anchored zoom: off-center zoom keeps the pointed graph coordinate anchored, and repeated in/out cycles do not drift the center."
+timeout_seconds = 180

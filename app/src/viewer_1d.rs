@@ -194,7 +194,9 @@ impl Viewer1D {
             ListView::new(paths.clone().map(PathId::from), Some(256));
 
         let active_viz_data_key = shared.initial_1d_view_mode.clone();
-        log::warn!("Viewer1D initial visualization mode: {active_viz_data_key}");
+        log::warn!(
+            "Viewer1D initial visualization mode: {active_viz_data_key}"
+        );
 
         graph.set_node_preprocess_fn(draw_node, move |_ctx, op_state| {
             op_state.vertices = Some(0..6);
@@ -776,7 +778,7 @@ impl AppWindow for Viewer1D {
 
         let pixels_per_bp = {
             let slot_width = path_slot_region.size().x as f64;
-            let view_width = self.view.len() as f64;
+            let view_width = self.view.len_f64();
             slot_width / view_width
         };
 
@@ -1048,12 +1050,11 @@ impl AppWindow for Viewer1D {
                     let min_scroll = 1.0;
                     let factor = 0.01;
                     if scroll.y.abs() > min_scroll {
-                        let dz = 1.0 - scroll.y * factor;
-                        self.view.zoom_with_focus(rel_x, dz);
+                        let dz = (-scroll.y as f64 * factor).exp();
+                        self.view.zoom_with_focus_f64(rel_x as f64, dz);
                     }
 
-                    let pan_pos = self.view.offset()
-                        + (rel_x * self.view.len() as f32) as u64;
+                    let pan_pos = self.view.bp_at_norm_f64(rel_x as f64) as u64;
                     let hovered_node =
                         self.shared.graph.node_at_pangenome_pos(Bp(pan_pos));
 
