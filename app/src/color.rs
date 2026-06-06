@@ -27,6 +27,8 @@ pub const GFALOOK_DEPTH_VALUE_RANGE: [f32; 2] = [-1.0, 12.5];
 /// default `-m` mapping: two grey low-coverage bins followed by reversed
 /// ColorBrewer Spectral 11. Each color covers one depth unit at cuts
 /// 0.5, 1.5, 2.5, ..., 12.5; values above 12.5 clamp to the final color.
+/// In particular, 0x through 0.5x is light grey and the normal 1x-ish range
+/// above 0.5x through 1.5x is neutral grey, not a spectral/rainbow color.
 pub const GFALOOK_DEPTH_PALETTE_RGB: [(u8, u8, u8); 13] = [
     (196, 196, 196),
     (128, 128, 128),
@@ -357,7 +359,10 @@ mod tests {
 
     #[test]
     fn gfalook_depth_low_coverage_uses_explicit_greys() {
+        assert_eq!(gfalook_depth_color_rgb(-1.0), (196, 196, 196));
+        assert_eq!(gfalook_depth_color_rgb(0.0), (196, 196, 196));
         assert_eq!(gfalook_depth_color_rgb(0.5), (196, 196, 196));
+        assert_eq!(gfalook_depth_color_rgb(0.5001), (128, 128, 128));
         assert_eq!(gfalook_depth_color_rgb(1.0), (128, 128, 128));
         assert_eq!(gfalook_depth_color_rgb(1.5), (128, 128, 128));
     }

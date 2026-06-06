@@ -1,11 +1,11 @@
-[2026-06-06T08:22:54Z WARN  wgpu_hal::vulkan::instance] Unable to find layer: VK_LAYER_KHRONOS_validation
+[2026-06-06T08:41:08Z WARN  wgpu_hal::vulkan::instance] Unable to find layer: VK_LAYER_KHRONOS_validation
 parsed 10928 edges
-[2026-06-06T08:22:57Z WARN  egui_wgpu::renderer] Detected a linear (sRGBA aware) framebuffer Bgra8UnormSrgb. egui prefers Rgba8Unorm or Bgra8Unorm
-[2026-06-06T08:22:57Z WARN  naga::front::spv] Unknown decoration Block
-[2026-06-06T08:22:57Z WARN  naga::front::spv] Unknown decoration Block
-[2026-06-06T08:22:57Z WARN  naga::front::spv] Unknown decoration Block
-[2026-06-06T08:22:57Z WARN  naga::front::spv] Unknown decoration Block
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  egui_wgpu::renderer] Detected a linear (sRGBA aware) framebuffer Bgra8UnormSrgb. egui prefers Rgba8Unorm or Bgra8Unorm
+[2026-06-06T08:41:09Z WARN  naga::front::spv] Unknown decoration Block
+[2026-06-06T08:41:09Z WARN  naga::front::spv] Unknown decoration Block
+[2026-06-06T08:41:09Z WARN  naga::front::spv] Unknown decoration Block
+[2026-06-06T08:41:09Z WARN  naga::front::spv] Unknown decoration Block
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "gl_VertexIndex",
         ),
@@ -14,7 +14,7 @@ parsed 10928 edges
         ty: [3],
         init: None,
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "i_position",
         ),
@@ -23,7 +23,7 @@ parsed 10928 edges
         ty: [6],
         init: None,
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "cfg",
         ),
@@ -37,7 +37,7 @@ parsed 10928 edges
         ty: [9],
         init: None,
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "i_size",
         ),
@@ -46,7 +46,7 @@ parsed 10928 edges
         ty: [6],
         init: None,
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "perVertexStruct",
         ),
@@ -57,7 +57,7 @@ parsed 10928 edges
             [16],
         ),
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "o_uv",
         ),
@@ -66,7 +66,7 @@ parsed 10928 edges
         ty: [6],
         init: None,
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "o_slot_id",
         ),
@@ -75,7 +75,7 @@ parsed 10928 edges
         ty: [1],
         init: None,
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "i_slot_id",
         ),
@@ -84,8 +84,8 @@ parsed 10928 edges
         ty: [1],
         init: None,
     }
-[2026-06-06T08:22:57Z ERROR raving_wgpu::shader::interface] group 0 - [BindGroupLayoutEntry { binding: 0, visibility: ShaderStages(VERTEX), ty: Buffer { ty: Uniform, has_dynamic_offset: false, min_binding_size: None }, count: None }]
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::render] vertex inputs: [
+[2026-06-06T08:41:09Z ERROR raving_wgpu::shader::interface] group 0 - [BindGroupLayoutEntry { binding: 0, visibility: ShaderStages(VERTEX), ty: Buffer { ty: Uniform, has_dynamic_offset: false, min_binding_size: None }, count: None }]
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::render] vertex inputs: [
         VertexInput {
             name: "i_position",
             location: 0,
@@ -143,9 +143,9 @@ parsed 10928 edges
         ],
     },
 ]
-[2026-06-06T08:22:57Z WARN  naga::front::spv] Unknown decoration Block
-[2026-06-06T08:22:57Z WARN  naga::front::spv] Unknown decoration Block
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  naga::front::spv] Unknown decoration Block
+[2026-06-06T08:41:09Z WARN  naga::front::spv] Unknown decoration Block
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "BG_COLOR",
         ),
@@ -154,7 +154,7 @@ parsed 10928 edges
         ty: [4],
         init: None,
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "i_slot_id",
         ),
@@ -163,7 +163,7 @@ parsed 10928 edges
         ty: [8],
         init: None,
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "u_data",
         ),
@@ -179,7 +179,7 @@ parsed 10928 edges
         ty: [12],
         init: None,
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "i_uv",
         ),
@@ -188,7 +188,7 @@ parsed 10928 edges
         ty: [15],
         init: None,
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "u_slots",
         ),
@@ -204,7 +204,7 @@ parsed 10928 edges
         ty: [21],
         init: None,
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "u_color_map",
         ),
@@ -218,7 +218,7 @@ parsed 10928 edges
         ty: [25],
         init: None,
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "u_colors",
         ),
@@ -232,7 +232,7 @@ parsed 10928 edges
         ty: [28],
         init: None,
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "u_sampler",
         ),
@@ -246,7 +246,7 @@ parsed 10928 edges
         ty: [29],
         init: None,
     }
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::interface] GlobalVariable {
         name: Some(
             "f_color",
         ),
@@ -255,24 +255,24 @@ parsed 10928 edges
         ty: [4],
         init: None,
     }
-[2026-06-06T08:22:57Z ERROR raving_wgpu::shader::interface] group 1 - [BindGroupLayoutEntry { binding: 0, visibility: ShaderStages(FRAGMENT), ty: Buffer { ty: Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None }, count: None }, BindGroupLayoutEntry { binding: 1, visibility: ShaderStages(FRAGMENT), ty: Sampler(Filtering), count: None }, BindGroupLayoutEntry { binding: 2, visibility: ShaderStages(FRAGMENT), ty: Texture { sample_type: Float { filterable: true }, view_dimension: D1, multisampled: false }, count: None }, BindGroupLayoutEntry { binding: 3, visibility: ShaderStages(FRAGMENT), ty: Buffer { ty: Uniform, has_dynamic_offset: false, min_binding_size: None }, count: None }, BindGroupLayoutEntry { binding: 4, visibility: ShaderStages(FRAGMENT), ty: Buffer { ty: Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None }, count: None }]
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::render] extending with 0
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::render] Expression: [1] - FunctionArgument(
+[2026-06-06T08:41:09Z ERROR raving_wgpu::shader::interface] group 1 - [BindGroupLayoutEntry { binding: 0, visibility: ShaderStages(FRAGMENT), ty: Buffer { ty: Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None }, count: None }, BindGroupLayoutEntry { binding: 1, visibility: ShaderStages(FRAGMENT), ty: Sampler(Filtering), count: None }, BindGroupLayoutEntry { binding: 2, visibility: ShaderStages(FRAGMENT), ty: Texture { sample_type: Float { filterable: true }, view_dimension: D1, multisampled: false }, count: None }, BindGroupLayoutEntry { binding: 3, visibility: ShaderStages(FRAGMENT), ty: Buffer { ty: Uniform, has_dynamic_offset: false, min_binding_size: None }, count: None }, BindGroupLayoutEntry { binding: 4, visibility: ShaderStages(FRAGMENT), ty: Buffer { ty: Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None }, count: None }]
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::render] extending with 0
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::render] Expression: [1] - FunctionArgument(
         0,
     )
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::render] Expression: [2] - GlobalVariable(
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::render] Expression: [2] - GlobalVariable(
         [2],
     )
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::render] Expression: [3] - FunctionArgument(
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::render] Expression: [3] - FunctionArgument(
         1,
     )
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::render] Expression: [4] - GlobalVariable(
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::render] Expression: [4] - GlobalVariable(
         [4],
     )
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::render] Expression: [5] - GlobalVariable(
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::render] Expression: [5] - GlobalVariable(
         [9],
     )
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::render] Expression: [6] - Load {
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::render] Expression: [6] - Load {
         pointer: [5],
     }
 [/home/erik/.cargo/git/checkouts/raving-wgpu-1a3c5ff65183cc5f/5950d19/src/shader/render.rs:801:5]
@@ -476,7 +476,7 @@ parsed 10928 edges
         ],
     },
 ]
-[2026-06-06T08:22:57Z WARN  raving_wgpu::shader::render] fragment_outputs: [
+[2026-06-06T08:41:09Z WARN  raving_wgpu::shader::render] fragment_outputs: [
         FragmentOutput {
             name: "f_color",
             location: 0,
@@ -489,8 +489,111 @@ parsed 10928 edges
             ),
         },
     ]
-[2026-06-06T08:22:57Z WARN  waragraph::viewer_1d] Viewer1D initial visualization mode: depth
-[2026-06-06T08:22:57Z ERROR waragraph::viewer_1d] Initialized in 0.002911284 seconds
+[2026-06-06T08:41:09Z WARN  waragraph::viewer_1d] Viewer1D initial visualization mode: depth
+[2026-06-06T08:41:09Z ERROR waragraph::viewer_1d] Initialized in 0.001543873 seconds
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
+pixels_per_bp: 0.001772007056243345
 pixels_per_bp: 0.001772007056243345
 pixels_per_bp: 0.001772007056243345
 pixels_per_bp: 0.001772007056243345

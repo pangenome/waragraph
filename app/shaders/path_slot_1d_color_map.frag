@@ -38,8 +38,8 @@ const vec4 ROW_SEPARATOR_COLOR = vec4(0.86, 0.86, 0.86, 1.0);
 const float ROW_SEPARATOR_UV_HEIGHT = 0.035;
 int gfalook_depth_color_index(float mean_depth) {
   // Matches ~/gfalook/src/main.rs get_depth_color default -m mode:
-  // cuts at 0.5 and 1.5 for light/dark grey, then one Spectral bin per
-  // depth unit through 12.5, clamping above that to the final color.
+  // cuts at 0.5 and 1.5 for light/neutral grey low-depth bins, then one
+  // Spectral bin per depth unit through 12.5, clamping above that.
   for (int i = 0; i < 13; i++) {
     if (mean_depth <= 0.5 + float(i)) {
       return i;

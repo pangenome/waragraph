@@ -71,8 +71,8 @@ import re
 out = Path("artifacts/match-waragraph-depth")
 
 palette = {
-    "light_gray_0_5x": (196, 196, 196),
-    "dark_gray_1x": (128, 128, 128),
+    "light_gray_0_to_0_5x": (196, 196, 196),
+    "neutral_gray_0_5_to_1_5x": (128, 128, 128),
     "spectral_2x": (158, 1, 66),
     "spectral_3x": (213, 62, 79),
     "spectral_4x": (244, 109, 67),
