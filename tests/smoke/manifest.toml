@@ -10,15 +10,27 @@
 name = "waragraph_zoom_anchor_transform"
 script = "scenarios/waragraph_zoom_anchor_transform.sh"
 owners = [
+    "integrate-current-waragraph",
     "make-waragraph-zoom",
 ]
 description = "Pins the 1D viewer viewport math for pointer-anchored zoom: off-center zoom keeps the pointed graph coordinate anchored, and repeated in/out cycles do not drift the center."
 timeout_seconds = 180
 
 [[scenario]]
+name = "waragraph_depth_color_map"
+script = "scenarios/waragraph_depth_color_map.sh"
+owners = [
+    "integrate-current-waragraph",
+    "match-waragraph-depth",
+]
+description = "Launches Waragraph on the c4 zstd graph and a controlled graph, captures the live 1D depth view, and verifies the corrected gfalook -m low-depth grey bins plus higher-depth spectral colors are visible."
+timeout_seconds = 240
+
+[[scenario]]
 name = "waragraph_visible_window_controls"
 script = "scenarios/waragraph_visible_window_controls.sh"
 owners = [
+    "integrate-current-waragraph",
     "restore-usable-window",
 ]
 description = "Launches the real Waragraph viewer on a display, verifies the default X11/XWayland window is decorated and resizable, exercises startup fullscreen and F11 fullscreen toggling, and checks Wayland-session/default plus native Wayland borderless launches do not hit the HiDPI buffer_scale crash."

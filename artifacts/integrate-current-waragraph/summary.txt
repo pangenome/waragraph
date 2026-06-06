@@ -1,0 +1,56 @@
+task=integrate-current-waragraph
+date=2026-06-06
+branch=wg/agent-37/integrate-current-waragraph
+pre_commit=685ab30
+pre_commit_subject=feat: match-waragraph-depth (agent-34)
+
+integrated_tree_commits:
+- 4b2821e feat: add-zstd-support (agent-7)
+- 9cef77a feat: fix-waragraph-sparse (agent-12)
+- a6be1d2 feat: fix-wayland-hidpi (agent-18)
+- cb0fdb5 feat: default-waragraph-to (agent-21)
+- 30b13d8 feat: make-waragraph-zoom (agent-24)
+- 18f646b feat: restore-usable-window (agent-31)
+- 2c06c95 feat: match-waragraph-depth (agent-26)
+- 685ab30 feat: match-waragraph-depth (agent-34)
+
+source_task_branch_commits_checked:
+- wg/agent-7/add-zstd-support: 4bc2597 feat: support zstd GFA input
+- wg/agent-12/fix-waragraph-sparse: e233578 fix: support sparse GFA segment ids
+- wg/agent-18/fix-wayland-hidpi: b177874 fix: avoid Wayland HiDPI buffer-scale crash
+- wg/agent-21/default-waragraph-to: 9fbc9e6 feat: default waragraph to depth view
+- wg/agent-24/make-waragraph-zoom: b6fac68 fix: anchor 1d zoom at pointer
+- wg/agent-31/restore-usable-window: 9187098 fix: restore usable waragraph window controls
+- wg/agent-26/match-waragraph-depth: a7ec063 merge master for depth coloring completion
+- wg/agent-26/match-waragraph-depth retry commits: 18df9b8, 824f561
+
+integration_notes:
+- The current local master/branch already contains equivalent squashed WG commits for the required viewer/input fixes.
+- Directly merging older source task branches would regress newer depth-color artifacts and window/depth merge resolution, so the integration keeps the coherent current tree and records equivalence.
+- tests/smoke/manifest.toml now lists integrate-current-waragraph as an owner of the zoom and window-control smoke checks.
+- tests/smoke/scenarios/waragraph_depth_color_map.sh adds a permanent live depth-color capture for default depth mode, zstd c4 parsing, low-depth gfalook grey bins, and higher-depth spectral colors.
+
+installed_binary:
+- path=/home/erik/.cargo/bin/waragraph
+- sha256=d8d20a7610f4211b16496214553e579fe62ae0d0983bf7b03b455abf4563d153
+- size=19568848
+- installed_mtime=2026-06-06 10:45:54.864194463 +0200
+- installed_from=/home/erik/waragraph/.wg-worktrees/agent-37/app
+- cargo_install_command=cargo install --path app --force
+- cargo_install_result=pass
+
+validation:
+- cargo build: pass
+- cargo test: pass
+- cargo install --path app --force: pass
+- installed launch: pass; command timed out after 10s with rc=124 as expected for GUI event loop, log contains "parsed 10928 edges" and "Viewer1D initial visualization mode: depth"
+- live depth color smoke: pass on DISPLAY=:0; default path-depth view, c4 zstd parse, light-grey/neutral-grey low depth, and higher-depth spectral colors observed
+- live pointer-anchored zoom capture: pass via artifacts/make-waragraph-zoom/validate_ui.sh on DISPLAY=:0
+- live window controls smoke: pass via tests/smoke/scenarios/waragraph_visible_window_controls.sh on DISPLAY=:0
+
+push_status:
+- non-force push to origin failed
+- branch=wg/agent-37/integrate-current-waragraph
+- attempted_commit=609040f
+- remote_push_url=https://github.com/pangenome/waragraph.git
+- error=remote: Repository not found.; fatal: repository 'https://github.com/pangenome/waragraph.git/' not found
