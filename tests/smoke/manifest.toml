@@ -14,3 +14,12 @@ owners = [
 ]
 description = "Pins the 1D viewer viewport math for pointer-anchored zoom: off-center zoom keeps the pointed graph coordinate anchored, and repeated in/out cycles do not drift the center."
 timeout_seconds = 180
+
+[[scenario]]
+name = "waragraph_visible_window_controls"
+script = "scenarios/waragraph_visible_window_controls.sh"
+owners = [
+    "restore-usable-window",
+]
+description = "Launches the real Waragraph viewer on a display, verifies the default X11/XWayland window is decorated and resizable, exercises startup fullscreen and F11 fullscreen toggling, and checks Wayland-session/default plus native Wayland borderless launches do not hit the HiDPI buffer_scale crash."
+timeout_seconds = 180

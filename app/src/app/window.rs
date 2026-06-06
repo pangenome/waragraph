@@ -5,9 +5,9 @@ use raving_wgpu::{gui::EguiCtx, WindowState};
 use tokio::sync::RwLock;
 use winit::{
     dpi::PhysicalSize,
-    event::{ElementState, Event, VirtualKeyCode, WindowEvent},
-    event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget},
-    window::{WindowBuilder, WindowId},
+    event::WindowEvent,
+    event_loop::EventLoopWindowTarget,
+    window::{Fullscreen, WindowBuilder, WindowId},
 };
 
 use crate::context::ContextState;
@@ -16,6 +16,13 @@ use super::{
     settings_menu::{SettingsUiResponse, SettingsWidget},
     AppMsg, AppType, AppWindow,
 };
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct WindowOptions {
+    pub borderless: bool,
+    pub fullscreen: bool,
+    pub maximized: bool,
+}
 
 pub struct AppWindowState {
     pub title: String,
@@ -36,10 +43,11 @@ impl AppWindowState {
     pub(super) fn init(
         event_loop: &EventLoopWindowTarget<()>,
         state: &raving_wgpu::State,
+        options: WindowOptions,
         title: &str,
         constructor: impl FnOnce(&WindowState) -> anyhow::Result<Box<dyn AppWindow>>,
     ) -> anyhow::Result<Self> {
-        let window = app_window_builder(title).build(event_loop)?;
+        let window = app_window_builder(title, options).build(event_loop)?;
 
         let mut win_state = state.prepare_window(window)?;
         resize_window_surface(&mut win_state, &state.device);
@@ -135,8 +143,10 @@ impl AsleepWindow {
         self,
         event_loop: &EventLoopWindowTarget<()>,
         state: &raving_wgpu::State,
+        options: WindowOptions,
     ) -> anyhow::Result<AppWindowState> {
-        let window = app_window_builder(&self.title).build(event_loop)?;
+        let window =
+            app_window_builder(&self.title, options).build(event_loop)?;
 
         let mut win_state = state.prepare_window(window)?;
         resize_window_surface(&mut win_state, &state.device);
@@ -150,34 +160,24 @@ impl AsleepWindow {
     }
 }
 
-fn app_window_builder(title: &str) -> WindowBuilder {
-    let builder = WindowBuilder::new().with_title(title);
-
-    if should_disable_wayland_csd(
-        std::env::var_os("WAYLAND_DISPLAY"),
-        std::env::var_os("WINIT_UNIX_BACKEND"),
-    ) {
-        builder.with_decorations(false)
-    } else {
-        builder
-    }
+fn app_window_builder(title: &str, options: WindowOptions) -> WindowBuilder {
+    WindowBuilder::new()
+        .with_title(title)
+        .with_decorations(!options.borderless)
+        .with_maximized(options.maximized)
+        .with_fullscreen(
+            options.fullscreen.then_some(Fullscreen::Borderless(None)),
+        )
 }
 
-fn should_disable_wayland_csd(
-    wayland_display: Option<std::ffi::OsString>,
-    winit_unix_backend: Option<std::ffi::OsString>,
-) -> bool {
-    let has_wayland_display = wayland_display
-        .as_deref()
-        .map(|value| !value.is_empty())
-        .unwrap_or(false);
-    let forces_x11 = winit_unix_backend
-        .as_deref()
-        .and_then(|value| value.to_str())
-        .map(|value| value.eq_ignore_ascii_case("x11"))
-        .unwrap_or(false);
-
-    has_wayland_display && !forces_x11
+pub(super) fn toggle_fullscreen(window_state: &WindowState) {
+    let window = &window_state.window;
+    let fullscreen = if window.fullscreen().is_some() {
+        None
+    } else {
+        Some(Fullscreen::Borderless(None))
+    };
+    window.set_fullscreen(fullscreen);
 }
 
 pub(super) fn resize_window_surface(
@@ -264,13 +264,12 @@ mod tests {
     }
 
     #[test]
-    fn disables_wayland_csd_unless_x11_backend_is_forced() {
-        assert!(should_disable_wayland_csd(Some("wayland-0".into()), None));
-        assert!(!should_disable_wayland_csd(
-            Some("wayland-0".into()),
-            Some("x11".into())
-        ));
-        assert!(!should_disable_wayland_csd(None, None));
+    fn window_options_default_to_decorated_windowed() {
+        let options = WindowOptions::default();
+
+        assert!(!options.borderless);
+        assert!(!options.fullscreen);
+        assert!(!options.maximized);
     }
 }
 
@@ -358,6 +357,7 @@ impl AppWindows {
         &mut self,
         event_loop: &EventLoopWindowTarget<()>,
         state: &raving_wgpu::State,
+        options: WindowOptions,
         delta: WindowDelta,
     ) -> anyhow::Result<()> {
         match delta {
@@ -369,7 +369,7 @@ impl AppWindows {
                 let asleep = self.sleeping.remove(&app_ty).ok_or(
                     anyhow::anyhow!("Can't wake a window that's not asleep"),
                 )?;
-                let state = asleep.wake(event_loop, state)?;
+                let state = asleep.wake(event_loop, state, options)?;
 
                 self.windows
                     .insert(state.window.window.id(), app_ty.clone());

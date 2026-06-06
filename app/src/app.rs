@@ -36,7 +36,7 @@ pub use window::AppWindowState;
 use self::{
     resource::{AnyArcMap, GraphDataCache},
     settings_menu::SettingsWindow,
-    window::{AppWindows, AsleepWindow, WindowDelta},
+    window::{toggle_fullscreen, AppWindows, WindowDelta, WindowOptions},
     workspace::Workspace,
 };
 
@@ -78,6 +78,7 @@ pub struct App {
     context_inspector: ContextInspector,
 
     app_windows: AppWindows,
+    window_options: WindowOptions,
     // pub windows: HashMap<WindowId, AppType>,
     // pub apps: HashMap<AppType, AppWindowState>,
 
@@ -248,6 +249,7 @@ impl App {
             context_inspector,
 
             app_windows,
+            window_options: args.window_options,
             // windows: HashMap::default(),
             // apps: HashMap::default(),
 
@@ -271,7 +273,13 @@ impl App {
         let title = title.map(|s| s.to_string()).unwrap_or(id.clone());
         let app_id = AppType::Custom(id);
 
-        let app = AppWindowState::init(event_loop, state, &title, constructor)?;
+        let app = AppWindowState::init(
+            event_loop,
+            state,
+            self.window_options,
+            &title,
+            constructor,
+        )?;
 
         let winid = app.window.window.id();
 
@@ -288,20 +296,26 @@ impl App {
     ) -> Result<()> {
         let title = "Waragraph 1D";
 
-        let app = AppWindowState::init(event_loop, state, title, |window| {
-            let dims: [u32; 2] = window.size.into();
+        let app = AppWindowState::init(
+            event_loop,
+            state,
+            self.window_options,
+            title,
+            |window| {
+                let dims: [u32; 2] = window.size.into();
 
-            let mut app = Viewer1D::init(
-                dims,
-                state,
-                &window,
-                self.shared.graph.clone(),
-                &self.shared,
-                &mut self.settings,
-            )?;
+                let app = Viewer1D::init(
+                    dims,
+                    state,
+                    &window,
+                    self.shared.graph.clone(),
+                    &self.shared,
+                    &mut self.settings,
+                )?;
 
-            Ok(Box::new(app))
-        })?;
+                Ok(Box::new(app))
+            },
+        )?;
 
         let winid = app.window.window.id();
 
@@ -326,18 +340,24 @@ impl App {
 
         let title = "Waragraph 2D";
 
-        let app = AppWindowState::init(event_loop, state, title, |window| {
-            let mut app = Viewer2D::init(
-                state,
-                &window,
-                self.shared.graph.clone(),
-                tsv,
-                &self.shared,
-                &mut self.settings,
-            )?;
+        let app = AppWindowState::init(
+            event_loop,
+            state,
+            self.window_options,
+            title,
+            |window| {
+                let app = Viewer2D::init(
+                    state,
+                    &window,
+                    self.shared.graph.clone(),
+                    tsv,
+                    &self.shared,
+                    &mut self.settings,
+                )?;
 
-            Ok(Box::new(app))
-        })?;
+                Ok(Box::new(app))
+            },
+        )?;
 
         let winid = app.window.window.id();
 
@@ -379,9 +399,12 @@ impl App {
                     let app_type = app_type.unwrap();
                     let app = self.app_windows.apps.get_mut(app_type).unwrap();
 
-                    let size = app.window.window.inner_size();
+                    if is_fullscreen_shortcut(event) {
+                        toggle_fullscreen(&app.window);
+                        return;
+                    }
 
-                    let mut consumed = app.on_event(event);
+                    let consumed = app.on_event(event);
 
                     if !consumed {
                         match &event {
@@ -544,8 +567,12 @@ impl App {
                 }
             }
             AppMsg::WindowDelta(delta) => {
-                self.app_windows
-                    .handle_window_delta(event_loop, state, delta)?;
+                self.app_windows.handle_window_delta(
+                    event_loop,
+                    state,
+                    self.window_options,
+                    delta,
+                )?;
             }
         }
 
@@ -594,6 +621,7 @@ pub struct Args {
     pub annotations: Vec<PathBuf>,
     pub gff_attr: Option<String>,
     pub initial_1d_view_mode: String,
+    pub window_options: WindowOptions,
     // pub annotations: Option<PathBuf>,
 }
 
@@ -618,6 +646,11 @@ pub fn parse_args() -> std::result::Result<Args, pico_args::Error> {
     let initial_1d_view_mode = pargs
         .opt_value_from_fn("--view-mode", parse_1d_view_mode)?
         .unwrap_or_else(|| "depth".to_string());
+    let window_options = WindowOptions {
+        borderless: pargs.contains("--borderless"),
+        fullscreen: pargs.contains("--fullscreen"),
+        maximized: pargs.contains("--maximized"),
+    };
 
     let args = Args {
         gfa: pargs.free_from_os_str(parse_path)?,
@@ -626,10 +659,49 @@ pub fn parse_args() -> std::result::Result<Args, pico_args::Error> {
         annotations,
         gff_attr,
         initial_1d_view_mode,
+        window_options,
         // init_range,
     };
 
     Ok(args)
+}
+
+pub fn configure_default_window_backend() {
+    if default_window_backend_for_environment(
+        std::env::var_os("WAYLAND_DISPLAY"),
+        std::env::var_os("DISPLAY"),
+        std::env::var_os("WINIT_UNIX_BACKEND"),
+    )
+    .as_deref()
+        == Some("x11")
+    {
+        std::env::set_var("WINIT_UNIX_BACKEND", "x11");
+    }
+}
+
+fn default_window_backend_for_environment(
+    wayland_display: Option<std::ffi::OsString>,
+    x11_display: Option<std::ffi::OsString>,
+    winit_unix_backend: Option<std::ffi::OsString>,
+) -> Option<String> {
+    let has_wayland_display = wayland_display
+        .as_deref()
+        .map(|value| !value.is_empty())
+        .unwrap_or(false);
+    let has_x11_display = x11_display
+        .as_deref()
+        .map(|value| !value.is_empty())
+        .unwrap_or(false);
+    let backend_is_explicit = winit_unix_backend
+        .as_deref()
+        .map(|value| !value.is_empty())
+        .unwrap_or(false);
+
+    if has_wayland_display && has_x11_display && !backend_is_explicit {
+        Some("x11".to_string())
+    } else {
+        None
+    }
 }
 
 fn parse_path(s: &std::ffi::OsStr) -> Result<std::path::PathBuf, &'static str> {
@@ -645,9 +717,26 @@ fn parse_1d_view_mode(s: &str) -> Result<String, &'static str> {
     }
 }
 
+fn is_fullscreen_shortcut(event: &WindowEvent<'_>) -> bool {
+    if let WindowEvent::KeyboardInput { input, .. } = event {
+        is_fullscreen_key_input(input)
+    } else {
+        false
+    }
+}
+
+fn is_fullscreen_key_input(input: &winit::event::KeyboardInput) -> bool {
+    matches!(input.state, ElementState::Pressed)
+        && matches!(input.virtual_keycode, Some(VirtualKeyCode::F11))
+}
+
 #[cfg(test)]
 mod tests {
-    use super::parse_1d_view_mode;
+    use super::{
+        default_window_backend_for_environment, is_fullscreen_key_input,
+        parse_1d_view_mode,
+    };
+    use winit::event::{ElementState, KeyboardInput, VirtualKeyCode};
 
     #[test]
     fn parse_1d_view_mode_defaults_and_aliases() {
@@ -656,6 +745,68 @@ mod tests {
         assert_eq!(parse_1d_view_mode("path_name").unwrap(), "path_name");
         assert_eq!(parse_1d_view_mode("strand").unwrap(), "strand");
         assert!(parse_1d_view_mode("unknown").is_err());
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn f11_press_is_fullscreen_shortcut() {
+        let input = KeyboardInput {
+            scancode: 0,
+            state: ElementState::Pressed,
+            virtual_keycode: Some(VirtualKeyCode::F11),
+            modifiers: Default::default(),
+        };
+
+        assert!(is_fullscreen_key_input(&input));
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn f11_release_is_not_fullscreen_shortcut() {
+        let input = KeyboardInput {
+            scancode: 0,
+            state: ElementState::Released,
+            virtual_keycode: Some(VirtualKeyCode::F11),
+            modifiers: Default::default(),
+        };
+
+        assert!(!is_fullscreen_key_input(&input));
+    }
+
+    #[test]
+    fn defaults_wayland_session_to_x11_when_xwayland_is_available() {
+        assert_eq!(
+            default_window_backend_for_environment(
+                Some("wayland-0".into()),
+                Some(":0".into()),
+                None
+            ),
+            Some("x11".to_string())
+        );
+    }
+
+    #[test]
+    fn keeps_explicit_winit_backend() {
+        assert_eq!(
+            default_window_backend_for_environment(
+                Some("wayland-0".into()),
+                Some(":0".into()),
+                Some("wayland".into())
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn does_not_select_x11_without_x_display() {
+        assert_eq!(
+            default_window_backend_for_environment(
+                Some("wayland-0".into()),
+                None,
+                None
+            ),
+            None
+        );
     }
 }
 

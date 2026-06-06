@@ -12,12 +12,20 @@ pub fn main() -> Result<()> {
 
     if args.is_err() {
         let name = std::env::args().next().unwrap();
-        println!("Usage: {name} [--view-mode depth|path-name|strand] <gfa> [tsv]");
+        println!(
+            "Usage: {name} [--view-mode depth|path-name|strand] [--fullscreen] [--maximized] [--borderless] <gfa> [tsv]"
+        );
         println!("4-column BED file can be provided using the --bed flag");
+        println!("Press F11 in a viewer window to toggle fullscreen.");
+        println!(
+            "Wayland sessions use X11/XWayland by default when available so decorated title bars remain usable; set WINIT_UNIX_BACKEND=wayland to override."
+        );
         std::process::exit(0);
     }
 
     let args = args?;
+
+    waragraph::app::configure_default_window_backend();
 
     let (event_loop, state) =
         pollster::block_on(raving_wgpu::initialize_no_window())?;

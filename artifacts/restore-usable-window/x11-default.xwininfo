@@ -1,0 +1,24 @@
+
+xwininfo: Window id: 0xc00003 "Waragraph 1D"
+
+  Absolute upper-left X:  50
+  Absolute upper-left Y:  188
+  Relative upper-left X:  28
+  Relative upper-left Y:  98
+  Width: 800
+  Height: 600
+  Depth: 24
+  Visual: 0x23
+  Visual Class: TrueColor
+  Border width: 0
+  Class: InputOutput
+  Colormap: 0x22 (installed)
+  Bit Gravity State: ForgetGravity
+  Window Gravity State: NorthWestGravity
+  Backing Store State: NotUseful
+  Save Under State: no
+  Map State: IsViewable
+  Override Redirect State: no
+  Corners:  +50+188  -2030+188  -2030-1132  +50-1132
+  -geometry 800x600+22+90
+
