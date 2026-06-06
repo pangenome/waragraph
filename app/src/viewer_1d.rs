@@ -1,7 +1,7 @@
 use crate::annotations::GlobalAnnotationId;
 use crate::app::settings_menu::SettingsWindow;
 use crate::app::{AppWindow, SharedState};
-use crate::color::ColorMap;
+use crate::color::{ColorMap, GFALOOK_DEPTH_VALUE_RANGE};
 use crate::context::{ContextQuery, ContextState};
 use crate::gui::{GridEntry, RowEntry, RowGridLayout};
 use crate::list::ListView;
@@ -314,7 +314,7 @@ impl Viewer1D {
                 data_key: "depth".to_string(),
                 color_scheme: colors.get_color_scheme_id("spectral").unwrap(),
                 default_color_map: ColorMap {
-                    value_range: [0.0, 13.0],
+                    value_range: GFALOOK_DEPTH_VALUE_RANGE,
                     color_range: [0.0, 1.0],
                 },
             };

@@ -36,6 +36,18 @@ vec4 BG_COLOR = vec4(1);
 // vec4 BG_COLOR = vec4(vec3(0), 1);
 const vec4 ROW_SEPARATOR_COLOR = vec4(0.86, 0.86, 0.86, 1.0);
 const float ROW_SEPARATOR_UV_HEIGHT = 0.035;
+int gfalook_depth_color_index(float mean_depth) {
+  // Matches ~/gfalook/src/main.rs get_depth_color default -m mode:
+  // cuts at 0.5 and 1.5 for light/dark grey, then one Spectral bin per
+  // depth unit through 12.5, clamping above that to the final color.
+  for (int i = 0; i < 13; i++) {
+    if (mean_depth <= 0.5 + float(i)) {
+      return i;
+    }
+  }
+
+  return 12;
+}
 
 void main() {
   uint row_offset = i_slot_id * u_data.row_size;
@@ -53,11 +65,19 @@ void main() {
 
   float v = u_data.values[row_offset + data_ix];
 
-  float v_n = (v - u_color_map.min_val) / (u_color_map.max_val - u_color_map.min_val);
+  vec4 sampled;
+  if (u_color_map.min_val < 0.0) {
+    sampled = texelFetch(
+      sampler1D(u_colors, u_sampler),
+      gfalook_depth_color_index(v),
+      0
+    );
+  } else {
+    float v_n = (v - u_color_map.min_val) / (u_color_map.max_val - u_color_map.min_val);
+    float c_n = mix(u_color_map.min_color, u_color_map.max_color, v_n);
+    sampled = texture(sampler1D(u_colors, u_sampler), c_n);
+  }
 
-  float c_n = mix(u_color_map.min_color, u_color_map.max_color, v_n);
-
-  vec4 sampled = texture(sampler1D(u_colors, u_sampler), c_n);
   vec4 color = isinf(v) ? vec4(1.0) : sampled;
 
   if (i_uv.y <= ROW_SEPARATOR_UV_HEIGHT) {

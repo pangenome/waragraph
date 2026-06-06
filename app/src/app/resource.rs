@@ -153,10 +153,21 @@ impl GraphDataSources {
         {
             let name = "depth".to_string();
             let graph = graph.clone();
+            let mut node_depth = vec![0f32; graph.node_count];
+            for path_id in graph.path_names.left_values() {
+                for step in graph.path_steps[path_id.ix()].iter() {
+                    node_depth[step.node().ix()] += 1.0;
+                }
+            }
+
             let ctor = move |path: PathId| {
+                // gfalook `-m` colors by coverage depth for each node/bin,
+                // not by repeat count within the row's own path.
                 let mut path_data: BTreeMap<Node, f32> = BTreeMap::default();
                 for step in graph.path_steps[path.ix()].iter() {
-                    *path_data.entry(step.node()).or_default() += 1.0;
+                    path_data
+                        .entry(step.node())
+                        .or_insert_with(|| node_depth[step.node().ix()]);
                 }
                 let path_data =
                     path_data.into_iter().map(|(_, v)| v).collect::<Vec<_>>();

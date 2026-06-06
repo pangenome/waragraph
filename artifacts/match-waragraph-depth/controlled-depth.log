@@ -1,0 +1,527 @@
+[2026-06-06T08:23:00Z WARN  wgpu_hal::vulkan::instance] Unable to find layer: VK_LAYER_KHRONOS_validation
+parsed 3 edges
+[2026-06-06T08:23:00Z WARN  egui_wgpu::renderer] Detected a linear (sRGBA aware) framebuffer Bgra8UnormSrgb. egui prefers Rgba8Unorm or Bgra8Unorm
+[2026-06-06T08:23:00Z WARN  naga::front::spv] Unknown decoration Block
+[2026-06-06T08:23:00Z WARN  naga::front::spv] Unknown decoration Block
+[2026-06-06T08:23:00Z WARN  naga::front::spv] Unknown decoration Block
+[2026-06-06T08:23:00Z WARN  naga::front::spv] Unknown decoration Block
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "gl_VertexIndex",
+        ),
+        space: Private,
+        binding: None,
+        ty: [3],
+        init: None,
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "i_position",
+        ),
+        space: Private,
+        binding: None,
+        ty: [6],
+        init: None,
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "cfg",
+        ),
+        space: Uniform,
+        binding: Some(
+            ResourceBinding {
+                group: 0,
+                binding: 0,
+            },
+        ),
+        ty: [9],
+        init: None,
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "i_size",
+        ),
+        space: Private,
+        binding: None,
+        ty: [6],
+        init: None,
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "perVertexStruct",
+        ),
+        space: Private,
+        binding: None,
+        ty: [16],
+        init: Some(
+            [16],
+        ),
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "o_uv",
+        ),
+        space: Private,
+        binding: None,
+        ty: [6],
+        init: None,
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "o_slot_id",
+        ),
+        space: Private,
+        binding: None,
+        ty: [1],
+        init: None,
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "i_slot_id",
+        ),
+        space: Private,
+        binding: None,
+        ty: [1],
+        init: None,
+    }
+[2026-06-06T08:23:00Z ERROR raving_wgpu::shader::interface] group 0 - [BindGroupLayoutEntry { binding: 0, visibility: ShaderStages(VERTEX), ty: Buffer { ty: Uniform, has_dynamic_offset: false, min_binding_size: None }, count: None }]
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::render] vertex inputs: [
+        VertexInput {
+            name: "i_position",
+            location: 0,
+            format: Float32x2,
+        },
+        VertexInput {
+            name: "i_size",
+            location: 1,
+            format: Float32x2,
+        },
+        VertexInput {
+            name: "i_slot_id",
+            location: 2,
+            format: Uint32,
+        },
+    ]
+[/home/erik/.cargo/git/checkouts/raving-wgpu-1a3c5ff65183cc5f/5950d19/src/shader/interface.rs:122:9] group_bindings = [
+    GroupBindings {
+        group_ix: 0,
+        entries: [
+            BindGroupLayoutEntry {
+                binding: 0,
+                visibility: ShaderStages(
+                    VERTEX,
+                ),
+                ty: Buffer {
+                    ty: Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            },
+        ],
+        bindings: [
+            BindingDef {
+                global_var_name: "cfg",
+                binding: ResourceBinding {
+                    group: 0,
+                    binding: 0,
+                },
+                ty: Struct {
+                    members: [
+                        StructMember {
+                            name: Some(
+                                "window_dims",
+                            ),
+                            ty: [6],
+                            binding: None,
+                            offset: 0,
+                        },
+                    ],
+                    span: 8,
+                },
+            },
+        ],
+    },
+]
+[2026-06-06T08:23:00Z WARN  naga::front::spv] Unknown decoration Block
+[2026-06-06T08:23:00Z WARN  naga::front::spv] Unknown decoration Block
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "BG_COLOR",
+        ),
+        space: Private,
+        binding: None,
+        ty: [4],
+        init: None,
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "i_slot_id",
+        ),
+        space: Private,
+        binding: None,
+        ty: [8],
+        init: None,
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "u_data",
+        ),
+        space: Storage {
+            access: LOAD,
+        },
+        binding: Some(
+            ResourceBinding {
+                group: 1,
+                binding: 0,
+            },
+        ),
+        ty: [12],
+        init: None,
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "i_uv",
+        ),
+        space: Private,
+        binding: None,
+        ty: [15],
+        init: None,
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "u_slots",
+        ),
+        space: Storage {
+            access: LOAD,
+        },
+        binding: Some(
+            ResourceBinding {
+                group: 1,
+                binding: 4,
+            },
+        ),
+        ty: [21],
+        init: None,
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "u_color_map",
+        ),
+        space: Uniform,
+        binding: Some(
+            ResourceBinding {
+                group: 1,
+                binding: 3,
+            },
+        ),
+        ty: [25],
+        init: None,
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "u_colors",
+        ),
+        space: Handle,
+        binding: Some(
+            ResourceBinding {
+                group: 1,
+                binding: 2,
+            },
+        ),
+        ty: [28],
+        init: None,
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "u_sampler",
+        ),
+        space: Handle,
+        binding: Some(
+            ResourceBinding {
+                group: 1,
+                binding: 1,
+            },
+        ),
+        ty: [29],
+        init: None,
+    }
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::interface] GlobalVariable {
+        name: Some(
+            "f_color",
+        ),
+        space: Private,
+        binding: None,
+        ty: [4],
+        init: None,
+    }
+[2026-06-06T08:23:00Z ERROR raving_wgpu::shader::interface] group 1 - [BindGroupLayoutEntry { binding: 0, visibility: ShaderStages(FRAGMENT), ty: Buffer { ty: Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None }, count: None }, BindGroupLayoutEntry { binding: 1, visibility: ShaderStages(FRAGMENT), ty: Sampler(Filtering), count: None }, BindGroupLayoutEntry { binding: 2, visibility: ShaderStages(FRAGMENT), ty: Texture { sample_type: Float { filterable: true }, view_dimension: D1, multisampled: false }, count: None }, BindGroupLayoutEntry { binding: 3, visibility: ShaderStages(FRAGMENT), ty: Buffer { ty: Uniform, has_dynamic_offset: false, min_binding_size: None }, count: None }, BindGroupLayoutEntry { binding: 4, visibility: ShaderStages(FRAGMENT), ty: Buffer { ty: Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None }, count: None }]
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::render] extending with 0
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::render] Expression: [1] - FunctionArgument(
+        0,
+    )
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::render] Expression: [2] - GlobalVariable(
+        [2],
+    )
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::render] Expression: [3] - FunctionArgument(
+        1,
+    )
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::render] Expression: [4] - GlobalVariable(
+        [4],
+    )
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::render] Expression: [5] - GlobalVariable(
+        [9],
+    )
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::render] Expression: [6] - Load {
+        pointer: [5],
+    }
+[/home/erik/.cargo/git/checkouts/raving-wgpu-1a3c5ff65183cc5f/5950d19/src/shader/render.rs:801:5]
+[/home/erik/.cargo/git/checkouts/raving-wgpu-1a3c5ff65183cc5f/5950d19/src/shader/render.rs:501:13]
+[/home/erik/.cargo/git/checkouts/raving-wgpu-1a3c5ff65183cc5f/5950d19/src/shader/render.rs:503:17]
+[/home/erik/.cargo/git/checkouts/raving-wgpu-1a3c5ff65183cc5f/5950d19/src/shader/interface.rs:122:9] group_bindings = [
+    GroupBindings {
+        group_ix: 1,
+        entries: [
+            BindGroupLayoutEntry {
+                binding: 0,
+                visibility: ShaderStages(
+                    FRAGMENT,
+                ),
+                ty: Buffer {
+                    ty: Storage {
+                        read_only: true,
+                    },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            },
+            BindGroupLayoutEntry {
+                binding: 1,
+                visibility: ShaderStages(
+                    FRAGMENT,
+                ),
+                ty: Sampler(
+                    Filtering,
+                ),
+                count: None,
+            },
+            BindGroupLayoutEntry {
+                binding: 2,
+                visibility: ShaderStages(
+                    FRAGMENT,
+                ),
+                ty: Texture {
+                    sample_type: Float {
+                        filterable: true,
+                    },
+                    view_dimension: D1,
+                    multisampled: false,
+                },
+                count: None,
+            },
+            BindGroupLayoutEntry {
+                binding: 3,
+                visibility: ShaderStages(
+                    FRAGMENT,
+                ),
+                ty: Buffer {
+                    ty: Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            },
+            BindGroupLayoutEntry {
+                binding: 4,
+                visibility: ShaderStages(
+                    FRAGMENT,
+                ),
+                ty: Buffer {
+                    ty: Storage {
+                        read_only: true,
+                    },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            },
+        ],
+        bindings: [
+            BindingDef {
+                global_var_name: "u_data",
+                binding: ResourceBinding {
+                    group: 1,
+                    binding: 0,
+                },
+                ty: Struct {
+                    members: [
+                        StructMember {
+                            name: Some(
+                                "total_size",
+                            ),
+                            ty: [8],
+                            binding: None,
+                            offset: 0,
+                        },
+                        StructMember {
+                            name: Some(
+                                "row_size",
+                            ),
+                            ty: [8],
+                            binding: None,
+                            offset: 4,
+                        },
+                        StructMember {
+                            name: Some(
+                                "values",
+                            ),
+                            ty: [11],
+                            binding: None,
+                            offset: 8,
+                        },
+                    ],
+                    span: 12,
+                },
+            },
+            BindingDef {
+                global_var_name: "u_sampler",
+                binding: ResourceBinding {
+                    group: 1,
+                    binding: 1,
+                },
+                ty: Sampler {
+                    comparison: false,
+                },
+            },
+            BindingDef {
+                global_var_name: "u_colors",
+                binding: ResourceBinding {
+                    group: 1,
+                    binding: 2,
+                },
+                ty: Image {
+                    dim: D1,
+                    arrayed: false,
+                    class: Sampled {
+                        kind: Float,
+                        multi: false,
+                    },
+                },
+            },
+            BindingDef {
+                global_var_name: "u_color_map",
+                binding: ResourceBinding {
+                    group: 1,
+                    binding: 3,
+                },
+                ty: Struct {
+                    members: [
+                        StructMember {
+                            name: Some(
+                                "min_val",
+                            ),
+                            ty: [1],
+                            binding: None,
+                            offset: 0,
+                        },
+                        StructMember {
+                            name: Some(
+                                "max_val",
+                            ),
+                            ty: [1],
+                            binding: None,
+                            offset: 4,
+                        },
+                        StructMember {
+                            name: Some(
+                                "min_color",
+                            ),
+                            ty: [1],
+                            binding: None,
+                            offset: 8,
+                        },
+                        StructMember {
+                            name: Some(
+                                "max_color",
+                            ),
+                            ty: [1],
+                            binding: None,
+                            offset: 12,
+                        },
+                    ],
+                    span: 16,
+                },
+            },
+            BindingDef {
+                global_var_name: "u_slots",
+                binding: ResourceBinding {
+                    group: 1,
+                    binding: 4,
+                },
+                ty: Struct {
+                    members: [
+                        StructMember {
+                            name: Some(
+                                "slot",
+                            ),
+                            ty: [20],
+                            binding: None,
+                            offset: 0,
+                        },
+                    ],
+                    span: 16,
+                },
+            },
+        ],
+    },
+]
+[2026-06-06T08:23:00Z WARN  raving_wgpu::shader::render] fragment_outputs: [
+        FragmentOutput {
+            name: "f_color",
+            location: 0,
+            sizes: (
+                Some(
+                    Quad,
+                ),
+                Float,
+                4,
+            ),
+        },
+    ]
+[2026-06-06T08:23:00Z WARN  waragraph::viewer_1d] Viewer1D initial visualization mode: depth
+[2026-06-06T08:23:00Z ERROR waragraph::viewer_1d] Initialized in 0.005071558 seconds
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935
+pixels_per_bp: 1.7983870967741935

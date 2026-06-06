@@ -11,12 +11,50 @@ pub mod util;
 pub mod widget;
 
 #[derive(
-    Clone, Copy, PartialEq, PartialOrd, bytemuck::Pod, bytemuck::Zeroable,
+    Debug, Clone, Copy, PartialEq, PartialOrd, bytemuck::Pod, bytemuck::Zeroable,
 )]
 #[repr(C)]
 pub struct ColorMap {
     pub value_range: [f32; 2],
     pub color_range: [f32; 2],
+}
+
+/// Sentinel stored in `ColorMap::value_range` to request gfalook `-m` depth
+/// binning in shaders instead of normalized color-ramp interpolation.
+pub const GFALOOK_DEPTH_VALUE_RANGE: [f32; 2] = [-1.0, 12.5];
+
+/// `~/gfalook/src/main.rs` `COLORBREWER_SPECTRAL_13` and `get_depth_color`
+/// default `-m` mapping: two grey low-coverage bins followed by reversed
+/// ColorBrewer Spectral 11. Each color covers one depth unit at cuts
+/// 0.5, 1.5, 2.5, ..., 12.5; values above 12.5 clamp to the final color.
+pub const GFALOOK_DEPTH_PALETTE_RGB: [(u8, u8, u8); 13] = [
+    (196, 196, 196),
+    (128, 128, 128),
+    (158, 1, 66),
+    (213, 62, 79),
+    (244, 109, 67),
+    (253, 174, 97),
+    (254, 224, 139),
+    (255, 255, 191),
+    (230, 245, 152),
+    (171, 221, 164),
+    (102, 194, 165),
+    (50, 136, 189),
+    (94, 79, 162),
+];
+
+pub fn gfalook_depth_color_index(mean_depth: f32) -> usize {
+    for i in 0..GFALOOK_DEPTH_PALETTE_RGB.len() {
+        if mean_depth <= 0.5 + i as f32 {
+            return i;
+        }
+    }
+
+    GFALOOK_DEPTH_PALETTE_RGB.len() - 1
+}
+
+pub fn gfalook_depth_color_rgb(mean_depth: f32) -> (u8, u8, u8) {
+    GFALOOK_DEPTH_PALETTE_RGB[gfalook_depth_color_index(mean_depth)]
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -115,22 +153,9 @@ impl ColorStore {
             [r as f32 / max, g as f32 / max, b as f32 / max, 1.0]
         };
 
-        let spectral_colors = [
-            rgba(158, 1, 66),
-            rgba(213, 62, 79),
-            rgba(244, 109, 67),
-            rgba(253, 174, 97),
-            rgba(254, 224, 139),
-            rgba(255, 255, 191),
-            rgba(230, 245, 152),
-            rgba(171, 221, 164),
-            rgba(102, 194, 165),
-            rgba(50, 136, 189),
-            rgba(94, 79, 162),
-        ];
-        let mut spectral = vec![rgba(196, 196, 196), rgba(128, 128, 128)];
-
-        spectral.extend(spectral_colors);
+        let spectral = GFALOOK_DEPTH_PALETTE_RGB
+            .iter()
+            .map(|&(r, g, b)| rgba(r, g, b));
 
         result.add_color_scheme("spectral", spectral);
 
@@ -156,7 +181,7 @@ impl ColorStore {
         let color_scheme = &self.color_schemes[scheme_id.0];
 
         let dimension = wgpu::TextureDimension::D1;
-        let format = wgpu::TextureFormat::Rgba8Unorm;
+        let format = wgpu::TextureFormat::Rgba8UnormSrgb;
 
         let label = format!("Texture - Color Scheme {scheme_name}");
 
@@ -320,5 +345,51 @@ impl ColorScheme {
             .clone_from_slice(bytemuck::cast_slice(&[len, 0, 0, 0]));
         buf[data_start..data_end]
             .clone_from_slice(bytemuck::cast_slice(&self.colors));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        gfalook_depth_color_index, gfalook_depth_color_rgb,
+        GFALOOK_DEPTH_PALETTE_RGB,
+    };
+
+    #[test]
+    fn gfalook_depth_low_coverage_uses_explicit_greys() {
+        assert_eq!(gfalook_depth_color_rgb(0.5), (196, 196, 196));
+        assert_eq!(gfalook_depth_color_rgb(1.0), (128, 128, 128));
+        assert_eq!(gfalook_depth_color_rgb(1.5), (128, 128, 128));
+    }
+
+    #[test]
+    fn gfalook_depth_higher_coverage_uses_reversed_spectral_bins() {
+        assert_eq!(gfalook_depth_color_rgb(2.0), (158, 1, 66));
+        assert_eq!(gfalook_depth_color_rgb(3.0), (213, 62, 79));
+        assert_eq!(gfalook_depth_color_rgb(12.0), (94, 79, 162));
+        assert_eq!(gfalook_depth_color_rgb(100.0), (94, 79, 162));
+    }
+
+    #[test]
+    fn gfalook_depth_bins_are_equivalent_to_gfalook_m_cuts() {
+        let cases = [
+            (0.0, 0),
+            (0.5, 0),
+            (0.5001, 1),
+            (1.5, 1),
+            (1.5001, 2),
+            (2.5, 2),
+            (2.5001, 3),
+            (12.5, 12),
+            (12.5001, 12),
+        ];
+
+        for (depth, expected_index) in cases {
+            assert_eq!(gfalook_depth_color_index(depth), expected_index);
+            assert_eq!(
+                gfalook_depth_color_rgb(depth),
+                GFALOOK_DEPTH_PALETTE_RGB[expected_index]
+            );
+        }
     }
 }
