@@ -161,8 +161,8 @@ impl GraphDataSources {
             }
 
             let ctor = move |path: PathId| {
-                // gfalook `-m` colors by coverage depth for each node/bin,
-                // not by repeat count within the row's own path.
+                // Depth colors use coverage across all paths for each node/bin,
+                // not repeat count within the row's own path.
                 let mut path_data: BTreeMap<Node, f32> = BTreeMap::default();
                 for step in graph.path_steps[path.ix()].iter() {
                     path_data

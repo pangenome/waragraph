@@ -145,7 +145,7 @@ impl App {
                     data_color_schemes.insert(data.into(), scheme);
                 };
 
-                add_entry("depth", "spectral");
+                add_entry("depth", "depth");
                 add_entry("strand", "black_red");
             }
 

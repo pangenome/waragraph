@@ -38,14 +38,18 @@ if ! grep -q '^default-depth-c4_parsed_10928_edges=true$' "$summary"; then
   exit 1
 fi
 
-for key in \
-  default-depth-c4_light_gray_0_to_0_5x_pixel_count \
-  default-depth-c4_neutral_gray_0_5_to_1_5x_pixel_count \
-  default-depth-c4_sampled_higher_coverage_colored_pixels \
-  controlled-depth_light_gray_0_to_0_5x_pixel_count \
-  controlled-depth_neutral_gray_0_5_to_1_5x_pixel_count \
-  controlled-depth_sampled_higher_coverage_colored_pixels
-do
+for case in controlled-depth controlled-high-depth; do
+  for color in gray red orange yellow green blue indigo violet; do
+    key="${case}_${color}_pixel_count"
+    value="$(awk -F= -v key="$key" '$1 == key { print $2 }' "$summary")"
+    if [[ -z "$value" || "$value" == "0" ]]; then
+      echo "FAIL: expected nonzero $key in depth color UI summary" >&2
+      cat "$summary" >&2
+      exit 1
+    fi
+  done
+
+  key="${case}_sampled_higher_coverage_colored_pixels"
   value="$(awk -F= -v key="$key" '$1 == key { print $2 }' "$summary")"
   if [[ -z "$value" || "$value" == "0" ]]; then
     echo "FAIL: expected nonzero $key in depth color UI summary" >&2
@@ -54,4 +58,4 @@ do
   fi
 done
 
-echo "PASS: default depth view and gfalook-compatible grey/rainbow depth colors validated"
+echo "PASS: default depth view and gray-to-ROYGBIV path-depth colors validated"

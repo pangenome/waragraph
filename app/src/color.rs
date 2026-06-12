@@ -19,45 +19,44 @@ pub struct ColorMap {
     pub color_range: [f32; 2],
 }
 
-/// Sentinel stored in `ColorMap::value_range` to request gfalook `-m` depth
-/// binning in shaders instead of normalized color-ramp interpolation.
-pub const GFALOOK_DEPTH_VALUE_RANGE: [f32; 2] = [-1.0, 12.5];
+impl ColorMap {
+    pub fn for_value_range(min: f32, max: f32) -> Self {
+        let min = if min.is_finite() { min } else { 0.0 };
+        let max = if max.is_finite() { max } else { min };
 
-/// `~/gfalook/src/main.rs` `COLORBREWER_SPECTRAL_13` and `get_depth_color`
-/// default `-m` mapping: two grey low-coverage bins followed by reversed
-/// ColorBrewer Spectral 11. Each color covers one depth unit at cuts
-/// 0.5, 1.5, 2.5, ..., 12.5; values above 12.5 clamp to the final color.
-/// In particular, 0x through 0.5x is light grey and the normal 1x-ish range
-/// above 0.5x through 1.5x is neutral grey, not a spectral/rainbow color.
-pub const GFALOOK_DEPTH_PALETTE_RGB: [(u8, u8, u8); 13] = [
-    (196, 196, 196),
-    (128, 128, 128),
-    (158, 1, 66),
-    (213, 62, 79),
-    (244, 109, 67),
-    (253, 174, 97),
-    (254, 224, 139),
-    (255, 255, 191),
-    (230, 245, 152),
-    (171, 221, 164),
-    (102, 194, 165),
-    (50, 136, 189),
-    (94, 79, 162),
-];
-
-pub fn gfalook_depth_color_index(mean_depth: f32) -> usize {
-    for i in 0..GFALOOK_DEPTH_PALETTE_RGB.len() {
-        if mean_depth <= 0.5 + i as f32 {
-            return i;
+        Self {
+            value_range: [min, max],
+            color_range: [0.0, 1.0],
         }
     }
 
-    GFALOOK_DEPTH_PALETTE_RGB.len() - 1
+    pub fn normalized_color_position(&self, value: f32) -> f32 {
+        let [min_val, max_val] = self.value_range;
+        let [min_color, max_color] = self.color_range;
+        let range = max_val - min_val;
+        let value_t = if range > 0.0 {
+            ((value - min_val) / range).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+
+        min_color + (max_color - min_color) * value_t
+    }
 }
 
-pub fn gfalook_depth_color_rgb(mean_depth: f32) -> (u8, u8, u8) {
-    GFALOOK_DEPTH_PALETTE_RGB[gfalook_depth_color_index(mean_depth)]
-}
+/// Path-depth colors for nodes: lowest observed depth is grey, then increasing
+/// depth advances through ROYGBIV. The color map range is set from graph depth
+/// stats so high-path-count graphs do not collapse to the final violet bin.
+pub const PATH_DEPTH_PALETTE_RGB: [(u8, u8, u8); 8] = [
+    (128, 128, 128),
+    (228, 26, 28),
+    (255, 127, 0),
+    (255, 255, 51),
+    (77, 175, 74),
+    (55, 126, 184),
+    (75, 0, 130),
+    (148, 0, 211),
+];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ColorSchemeId(usize);
@@ -155,11 +154,11 @@ impl ColorStore {
             [r as f32 / max, g as f32 / max, b as f32 / max, 1.0]
         };
 
-        let spectral = GFALOOK_DEPTH_PALETTE_RGB
+        let depth = PATH_DEPTH_PALETTE_RGB
             .iter()
             .map(|&(r, g, b)| rgba(r, g, b));
 
-        result.add_color_scheme("spectral", spectral);
+        result.add_color_scheme("depth", depth);
 
         let black_red = (0..8).map(|i: i32| {
             // for i = 8 this is 255, which is what we want
@@ -352,49 +351,37 @@ impl ColorScheme {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        gfalook_depth_color_index, gfalook_depth_color_rgb,
-        GFALOOK_DEPTH_PALETTE_RGB,
-    };
+    use super::{ColorMap, PATH_DEPTH_PALETTE_RGB};
 
     #[test]
-    fn gfalook_depth_low_coverage_uses_explicit_greys() {
-        assert_eq!(gfalook_depth_color_rgb(-1.0), (196, 196, 196));
-        assert_eq!(gfalook_depth_color_rgb(0.0), (196, 196, 196));
-        assert_eq!(gfalook_depth_color_rgb(0.5), (196, 196, 196));
-        assert_eq!(gfalook_depth_color_rgb(0.5001), (128, 128, 128));
-        assert_eq!(gfalook_depth_color_rgb(1.0), (128, 128, 128));
-        assert_eq!(gfalook_depth_color_rgb(1.5), (128, 128, 128));
+    fn path_depth_palette_is_grey_then_roygbiv() {
+        assert_eq!(
+            PATH_DEPTH_PALETTE_RGB,
+            [
+                (128, 128, 128),
+                (228, 26, 28),
+                (255, 127, 0),
+                (255, 255, 51),
+                (77, 175, 74),
+                (55, 126, 184),
+                (75, 0, 130),
+                (148, 0, 211),
+            ]
+        );
     }
 
     #[test]
-    fn gfalook_depth_higher_coverage_uses_reversed_spectral_bins() {
-        assert_eq!(gfalook_depth_color_rgb(2.0), (158, 1, 66));
-        assert_eq!(gfalook_depth_color_rgb(3.0), (213, 62, 79));
-        assert_eq!(gfalook_depth_color_rgb(12.0), (94, 79, 162));
-        assert_eq!(gfalook_depth_color_rgb(100.0), (94, 79, 162));
+    fn color_map_uses_data_range_instead_of_fixed_depth_cap() {
+        let color_map = ColorMap::for_value_range(0.0, 210.0);
+
+        assert!(color_map.normalized_color_position(13.0) < 0.1);
+        assert_eq!(color_map.normalized_color_position(210.0), 1.0);
     }
 
     #[test]
-    fn gfalook_depth_bins_are_equivalent_to_gfalook_m_cuts() {
-        let cases = [
-            (0.0, 0),
-            (0.5, 0),
-            (0.5001, 1),
-            (1.5, 1),
-            (1.5001, 2),
-            (2.5, 2),
-            (2.5001, 3),
-            (12.5, 12),
-            (12.5001, 12),
-        ];
+    fn single_depth_range_maps_to_grey_end() {
+        let color_map = ColorMap::for_value_range(42.0, 42.0);
 
-        for (depth, expected_index) in cases {
-            assert_eq!(gfalook_depth_color_index(depth), expected_index);
-            assert_eq!(
-                gfalook_depth_color_rgb(depth),
-                GFALOOK_DEPTH_PALETTE_RGB[expected_index]
-            );
-        }
+        assert_eq!(color_map.normalized_color_position(42.0), 0.0);
     }
 }

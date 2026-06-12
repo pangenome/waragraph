@@ -1,57 +1,38 @@
-# match-waragraph-depth validation notes
+# path-depth color validation notes
 
-Date: 2026-06-06
+Date: 2026-06-12
 
-## gfalook source matched
-
-The Waragraph depth color mapping is copied from `/home/erik/gfalook/src/main.rs`:
-
-- `COLORBREWER_SPECTRAL_13`, lines 1982-1999 in the inspected tree.
-- `get_depth_color`, lines 4748-4806 in the inspected tree.
-
-Default `gfalook -m` behavior uses no interpolation. It scans these cuts:
+Waragraph depth mode colors nodes by path depth over the graph. The active
+palette is grey followed by ROYGBIV:
 
 ```text
-0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5
+128,128,128  grey, lowest observed depth
+228,26,28    red
+255,127,0    orange
+255,255,51   yellow
+77,175,74    green
+55,126,184   blue
+75,0,130     indigo
+148,0,211    violet, highest observed depth
 ```
 
-The matched RGB bins are:
+The color range is derived from the observed graph node-depth stats, not a
+fixed gfalook-style cutoff. This keeps high-path-count graphs from collapsing
+to the final violet bin when every visible node depth is above a small fixed
+threshold.
 
-```text
-depth <= 0.5    -> 196,196,196  light gray base/low-depth color
-depth <= 1.5    -> 128,128,128  neutral gray 1x-ish coverage range
-depth <= 2.5    -> 158,1,66
-depth <= 3.5    -> 213,62,79
-depth <= 4.5    -> 244,109,67
-depth <= 5.5    -> 253,174,97
-depth <= 6.5    -> 254,224,139
-depth <= 7.5    -> 255,255,191
-depth <= 8.5    -> 230,245,152
-depth <= 9.5    -> 171,221,164
-depth <= 10.5   -> 102,194,165
-depth <= 11.5   -> 50,136,189
-depth <= 12.5   -> 94,79,162
-depth > 12.5    -> 94,79,162
-```
-
-This is the corrected low-depth behavior from the retry prompt: 0x through 0.5x is light gray, greater than 0.5x through 1.5x is neutral gray, and the Spectral/rainbow bins begin above 1.5x.
-
-## odgi reference
-
-`/home/erik/bin/odgi` is available and reports `v0.9.2-20-g5e58a324`.
-
-`odgi viz --help` documents `-G, --no-grey-depth` as: "Use the colorbrewer palette for <0.5x and ~1x coverage bins. By default, these bins are light and neutral grey." This matches the low-depth gray semantics in `gfalook -m`.
-
-A controlled `odgi viz -m` run was captured at `controlled-depth-odgi.png` and produced visible `(128,128,128)` neutral-gray pixels for the controlled 1x path bins. That odgi run did not expose higher global-coverage Spectral bins from this fixture, so Waragraph's higher-color validation is done with the app's controlled global node-coverage fixture and source-level `get_depth_color` equivalence tests.
-
-## Waragraph validation
+## Validation
 
 Automated Rust tests in `app/src/color.rs` cover:
 
-- negative and 0x depth -> `(196,196,196)`
-- 0.5x -> `(196,196,196)`
-- just above 0.5x, 1x, and 1.5x -> `(128,128,128)`
-- just above 1.5x and higher bins -> reversed Spectral colors
-- clamping above 12.5x
+- the exact grey-to-ROYGBIV palette
+- high-depth ranges such as `0..210` using the actual data range instead of a
+  fixed cap
+- single-depth graphs mapping to the low/grey end instead of producing an
+  undefined or final-bin color
 
-The scripted UI validation in `validate_ui.sh` opens Waragraph in the default view, captures `/home/erik/waragraph/c4.k311.poa2kb.gfa.zst` and the controlled fixture, and samples rendered RGB histograms for the light gray -> neutral gray -> Spectral transition.
+The scripted UI validation in `validate_ui.sh` opens Waragraph in the default
+depth view, captures `/home/erik/waragraph/c4.k311.poa2kb.gfa.zst`, captures an
+8-depth controlled fixture, and generates a high-depth controlled fixture with
+node depths 203 through 210. It checks live screenshots for nonzero grey, red,
+orange, yellow, green, blue, indigo, and violet pixels in both controlled cases.

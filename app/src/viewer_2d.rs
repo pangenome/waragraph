@@ -270,10 +270,8 @@ impl Viewer2D {
             })
         };
 
-        let color_mapping = ColorMap {
-            value_range: [0.0, 13.0],
-            color_range: [0.0, 1.0],
-        };
+        let color_mapping =
+            ColorMap::for_value_range(data.stats.min, data.stats.max);
 
         let color_mapping = crate::util::Uniform::new(
             &state,
@@ -912,7 +910,7 @@ impl AppWindow for Viewer2D {
         let (sampler, tex, tex_size) = {
             let colors = self.shared.colors.blocking_read();
 
-            let sampler = colors.linear_sampler.clone();
+            let sampler = colors.nearest_sampler.clone();
 
             let id = self
                 .shared

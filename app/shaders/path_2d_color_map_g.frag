@@ -22,12 +22,19 @@ layout (set = 1, binding = 3) uniform ColorMap {
   float max_color;
 } u_color_map;
 
+float color_map_position(float v) {
+  float range = u_color_map.max_val - u_color_map.min_val;
+  float v_n = range > 0.0
+    ? clamp((v - u_color_map.min_val) / range, 0.0, 1.0)
+    : 0.0;
+
+  return clamp(mix(u_color_map.min_color, u_color_map.max_color, v_n), 0.0, 1.0);
+}
+
 void main() {
   float v = data.values[i_node_id];
 
-  float v_n = (v - u_color_map.min_val) / (u_color_map.max_val - u_color_map.min_val);
-  float c_n = mix(u_color_map.min_color, u_color_map.max_color, v_n);
-  vec4 color = texture(sampler1D(u_colors, u_sampler), c_n);
+  vec4 color = texture(sampler1D(u_colors, u_sampler), color_map_position(v));
 
   f_color = color;
 

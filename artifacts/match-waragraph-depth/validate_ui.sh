@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 OUT="$ROOT/artifacts/match-waragraph-depth"
 C4_GRAPH="/home/erik/waragraph/c4.k311.poa2kb.gfa.zst"
 CONTROLLED_GRAPH="$OUT/controlled-depth.gfa"
+CONTROLLED_HIGH_DEPTH_GRAPH="$OUT/controlled-high-depth.gfa"
 BIN="$ROOT/target/debug/waragraph"
 
 mkdir -p "$OUT"
@@ -16,7 +17,48 @@ fi
 
 summary="$OUT/summary.txt"
 
-rm -f "$OUT"/*.log "$OUT"/*.png "$OUT"/*.histogram.txt "$summary"
+rm -f \
+  "$OUT"/default-depth-c4.log \
+  "$OUT"/default-depth-c4.png \
+  "$OUT"/default-depth-c4.histogram.txt \
+  "$OUT"/controlled-depth.log \
+  "$OUT"/controlled-depth.png \
+  "$OUT"/controlled-depth.histogram.txt \
+  "$OUT"/controlled-high-depth.log \
+  "$OUT"/controlled-high-depth.png \
+  "$OUT"/controlled-high-depth.histogram.txt \
+  "$summary"
+
+path_nodes() {
+  local start="$1"
+  local nodes=()
+  local node
+  for node in $(seq "$start" 8); do
+    nodes+=("${node}+")
+  done
+  local IFS=,
+  printf "%s" "${nodes[*]}"
+}
+
+write_high_depth_graph() {
+  {
+    printf 'H\tVN:Z:1.0\n'
+    for node in $(seq 1 8); do
+      printf 'S\t%s\tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n' "$node"
+    done
+    for node in $(seq 1 7); do
+      printf 'L\t%s\t+\t%s\t+\t0M\n' "$node" "$((node + 1))"
+    done
+    for path in $(seq 1 203); do
+      printf 'P\tshared_%03d\t%s\t*\n' "$path" "$(path_nodes 1)"
+    done
+    for start in $(seq 2 8); do
+      printf 'P\textra_%s\t%s\t*\n' "$start" "$(path_nodes "$start")"
+    done
+  } > "$CONTROLLED_HIGH_DEPTH_GRAPH"
+}
+
+write_high_depth_graph
 
 run_case() {
   local name="$1"
@@ -63,6 +105,7 @@ run_case() {
 
 run_case default-depth-c4 "$C4_GRAPH"
 run_case controlled-depth "$CONTROLLED_GRAPH"
+run_case controlled-high-depth "$CONTROLLED_HIGH_DEPTH_GRAPH"
 
 python3 - <<'PY' > "$summary"
 from pathlib import Path
@@ -71,11 +114,14 @@ import re
 out = Path("artifacts/match-waragraph-depth")
 
 palette = {
-    "light_gray_0_to_0_5x": (196, 196, 196),
-    "neutral_gray_0_5_to_1_5x": (128, 128, 128),
-    "spectral_2x": (158, 1, 66),
-    "spectral_3x": (213, 62, 79),
-    "spectral_4x": (244, 109, 67),
+    "gray": (128, 128, 128),
+    "red": (228, 26, 28),
+    "orange": (255, 127, 0),
+    "yellow": (255, 255, 51),
+    "green": (77, 175, 74),
+    "blue": (55, 126, 184),
+    "indigo": (75, 0, 130),
+    "violet": (148, 0, 211),
 }
 
 def count_rgb(hist, rgb):
@@ -83,11 +129,12 @@ def count_rgb(hist, rgb):
     m = re.search(pattern, hist)
     return int(m.group(1)) if m else 0
 
-print(f"source_gfalook=/home/erik/gfalook/src/main.rs COLORBREWER_SPECTRAL_13 get_depth_color")
+print("source_palette=waragraph gray_to_roygbiv_path_depth")
 
 for case, graph in [
     ("default-depth-c4", "/home/erik/waragraph/c4.k311.poa2kb.gfa.zst"),
     ("controlled-depth", "artifacts/match-waragraph-depth/controlled-depth.gfa"),
+    ("controlled-high-depth", "artifacts/match-waragraph-depth/controlled-high-depth.gfa"),
 ]:
     log = (out / f"{case}.log").read_text(errors="replace")
     hist = (out / f"{case}.histogram.txt").read_text(errors="replace")
@@ -103,7 +150,7 @@ for case, graph in [
     colored = sum(
         count_rgb(hist, rgb)
         for name, rgb in palette.items()
-        if name.startswith("spectral_")
+        if name != "gray"
     )
     print(f"{case}_sampled_higher_coverage_colored_pixels={colored}")
 PY

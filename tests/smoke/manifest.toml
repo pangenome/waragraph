@@ -20,10 +20,11 @@ timeout_seconds = 180
 name = "waragraph_depth_color_map"
 script = "scenarios/waragraph_depth_color_map.sh"
 owners = [
+    "fix-node-path",
     "integrate-current-waragraph",
     "match-waragraph-depth",
 ]
-description = "Launches Waragraph on the c4 zstd graph and a controlled graph, captures the live 1D depth view, and verifies the corrected gfalook -m low-depth grey bins plus higher-depth spectral colors are visible."
+description = "Launches Waragraph on the c4 zstd graph and controlled graphs, captures the live 1D depth view, and verifies gray-to-ROYGBIV path-depth colors without fixed high-depth violet clamping."
 timeout_seconds = 240
 
 [[scenario]]
