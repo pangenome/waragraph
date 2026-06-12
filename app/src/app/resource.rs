@@ -129,7 +129,7 @@ impl GraphDataSources {
             graph_f32.insert(name, Arc::new(ctor));
         }
 
-        // graph path depth
+        // graph node depth: count every path traversal over each node
         {
             let name = "depth".to_string();
             let graph = graph.clone();
@@ -149,7 +149,7 @@ impl GraphDataSources {
             graph_f32.insert(name, Arc::new(ctor));
         }
 
-        // path depth
+        // path depth: color each path row by global node traversal depth
         {
             let name = "depth".to_string();
             let graph = graph.clone();

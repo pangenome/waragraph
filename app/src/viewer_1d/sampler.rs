@@ -4,7 +4,9 @@ use async_trait::async_trait;
 
 use anyhow::Result;
 
-use waragraph_core::graph::{Bp, PathId, PathIndex};
+use waragraph_core::graph::{
+    sampling::proportional_bin_range, Bp, PathId, PathIndex,
+};
 
 use crate::app::resource::GraphDataCache;
 
@@ -133,7 +135,11 @@ impl Sampler for PathNodeSetSampler {
 
             for (bin_ix, buf_val) in bins.into_iter().enumerate() {
                 // pangenome space
-                let range = bin_range(bin_count, &view, bin_ix);
+                let range = proportional_bin_range(
+                    view.start.0..view.end.0,
+                    used_bins,
+                    bin_ix,
+                );
 
                 // get range of nodes corresponding to the pangenome `range`
                 let (start, end) =
@@ -153,20 +159,4 @@ impl Sampler for PathNodeSetSampler {
 
         Ok(sample_vec)
     }
-}
-
-fn bin_range(
-    bin_count: usize,
-    view_range: &std::ops::Range<Bp>,
-    bin_ix: usize,
-) -> std::ops::Range<u64> {
-    let s = view_range.start.0;
-    let e = view_range.end.0;
-    let len = e - s;
-
-    let bin_size = len / bin_count as u64;
-
-    let start = s + bin_size * bin_ix as u64;
-    let end = start + bin_size;
-    start..end
 }

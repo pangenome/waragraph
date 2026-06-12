@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, ops::Range};
 
 use super::{Node, PathId, PathIndex};
 
@@ -6,33 +6,46 @@ pub trait PathData<T> {
     fn get_path(&self, path_id: PathId) -> &[T];
 }
 
+pub fn proportional_bin_range(
+    view_range: Range<u64>,
+    bin_count: usize,
+    bin_ix: usize,
+) -> Range<u64> {
+    assert!(bin_count > 0, "bin_count must be non-zero");
+    assert!(bin_ix < bin_count, "bin_ix must be less than bin_count");
+
+    let start = view_range.start;
+    let len = view_range.end.saturating_sub(view_range.start) as u128;
+    let bin_count = bin_count as u128;
+    let bin_ix = bin_ix as u128;
+
+    let bin_start = start + ((len * bin_ix) / bin_count) as u64;
+    let bin_end = start + ((len * (bin_ix + 1)) / bin_count) as u64;
+
+    bin_start..bin_end
+}
+
 pub fn sample_data_into_buffer(
     index: &PathIndex,
     path_id: PathId,
     path_data: &[f32],
-    view_range: std::ops::Range<u64>,
+    view_range: Range<u64>,
     bins: &mut [f32],
 ) {
     let bin_count = bins.len();
+    bins.fill(f32::NEG_INFINITY);
 
-    let bin_range = {
-        let s = view_range.start;
-        let e = view_range.end;
-        let len = e - s;
+    if bin_count == 0 || view_range.start >= view_range.end {
+        return;
+    }
 
-        let bin_size = len / bin_count as u64;
+    let view_len = usize::try_from(view_range.end - view_range.start)
+        .unwrap_or(usize::MAX);
+    let used_bins = view_len.min(bin_count);
 
-        move |bin_ix: usize| {
-            let start = s + bin_size * bin_ix as u64;
-            let end = start + bin_size;
-            start..end
-        }
-    };
-
-    for (bin_ix, buf_val) in bins.iter_mut().enumerate() {
-        // using negative infinity as a marker for empty bins
-        *buf_val = f32::NEG_INFINITY;
-        let range = bin_range(bin_ix);
+    for (bin_ix, buf_val) in bins[..used_bins].iter_mut().enumerate() {
+        let range =
+            proportional_bin_range(view_range.clone(), used_bins, bin_ix);
         let iter = index.path_data_pan_range_iter(range, path_id, path_data);
 
         let mut sum_len = 0;
@@ -54,7 +67,7 @@ pub fn sample_path_data_into_buffer<D>(
     data: &D,
     paths: impl IntoIterator<Item = PathId>,
     bins: usize,
-    view_range: std::ops::Range<u64>,
+    view_range: Range<u64>,
     out: &mut [u8],
 ) where
     D: PathData<f32>,
@@ -64,7 +77,10 @@ pub fn sample_path_data_into_buffer<D>(
     // the part that holds the row size & total size
     let prefix_size = std::mem::size_of::<u32>() * 4;
 
-    let bins = ((view_range.end - view_range.start) as usize).min(bins);
+    let view_len =
+        usize::try_from(view_range.end.saturating_sub(view_range.start))
+            .unwrap_or(usize::MAX);
+    let bins = view_len.min(bins);
 
     let elem_size = std::mem::size_of::<f32>();
     let needed_size = prefix_size + elem_size * bins * paths.len();
@@ -82,21 +98,11 @@ pub fn sample_path_data_into_buffer<D>(
         0,
     ]));
 
+    if bins == 0 {
+        return;
+    }
+
     let data_offset = 16;
-
-    let bin_range = {
-        let s = view_range.start;
-        let e = view_range.end;
-        let len = e - s;
-
-        let bin_size = len / bins as u64;
-
-        move |bin_ix: usize| {
-            let start = s + bin_size * bin_ix as u64;
-            let end = start + bin_size;
-            start..end
-        }
-    };
 
     let row_size = elem_size * row_size;
 
@@ -110,7 +116,8 @@ pub fn sample_path_data_into_buffer<D>(
         for (buf_val, bin_ix) in buf_row.iter_mut().zip(0..bins) {
             // using negative infinity as a marker for empty bins
             *buf_val = f32::NEG_INFINITY;
-            let range = bin_range(bin_ix);
+            let range =
+                proportional_bin_range(view_range.clone(), bins, bin_ix);
             let iter =
                 index.path_data_pan_range_iter(range, path_id, path_data);
 
@@ -126,6 +133,84 @@ pub fn sample_path_data_into_buffer<D>(
                 *buf_val = sum_val / sum_len as f32;
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        path::PathBuf,
+        time::{SystemTime, UNIX_EPOCH},
+    };
+
+    fn temp_path(name: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir()
+            .join(format!("waragraph-{}-{nanos}-{name}", std::process::id(),))
+    }
+
+    #[test]
+    fn proportional_bins_cover_entire_view_without_truncating_tail() {
+        let view = 10..1798;
+        let bin_count = 1024;
+
+        let mut previous_end = view.start;
+        let mut covered = 0;
+
+        for bin_ix in 0..bin_count {
+            let range = proportional_bin_range(view.clone(), bin_count, bin_ix);
+            assert_eq!(previous_end, range.start);
+            assert!(range.start < range.end);
+            covered += range.end - range.start;
+            previous_end = range.end;
+        }
+
+        assert_eq!(view.end, previous_end);
+        assert_eq!(view.end - view.start, covered);
+    }
+
+    #[test]
+    fn proportional_bins_distribute_remainder() {
+        let bins = (0..3)
+            .map(|bin_ix| proportional_bin_range(0..10, 3, bin_ix))
+            .collect::<Vec<_>>();
+
+        assert_eq!(bins, vec![0..3, 3..6, 6..10]);
+    }
+
+    #[test]
+    fn sample_data_into_buffer_uses_all_of_non_divisible_view() {
+        let path = temp_path("non-divisible-sampling.gfa");
+        let mut gfa = String::from("H\tVN:Z:1.0\n");
+        for node in 1..=10 {
+            gfa.push_str(&format!("S\t{node}\tA\n"));
+        }
+        let steps = (1..=10)
+            .map(|node| format!("{node}+"))
+            .collect::<Vec<_>>()
+            .join(",");
+        gfa.push_str(&format!("P\tp\t{steps}\t*\n"));
+
+        std::fs::write(&path, gfa).unwrap();
+        let index = PathIndex::from_gfa(&path).unwrap();
+        let _ = std::fs::remove_file(path);
+
+        let path_data = (1..=10).map(|v| v as f32).collect::<Vec<_>>();
+        let mut bins = vec![0.0; 6];
+
+        sample_data_into_buffer(
+            &index,
+            PathId::from(0usize),
+            &path_data,
+            0..10,
+            &mut bins,
+        );
+
+        assert_eq!(bins, vec![1.0, 2.5, 4.5, 6.0, 7.5, 9.5]);
     }
 }
 
